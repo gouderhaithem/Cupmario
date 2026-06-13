@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Life Quest — Pip's Run</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- Letterbox: fills the window, centers the scaled game frame. -->
+  <div id="stage">
+    <!-- The whole game scales as one unit to preserve aspect ratio. -->
+    <div id="scaler">
+      <!-- 960x592 framed cabinet: 52px HUD bar + 540px canvas viewport. -->
+      <div id="cabinet">
+        <!-- HUD (DOM, synced from state by render/hud.ts) -->
+        <div id="hud">
+          <div id="hud-title">LIFE QUEST &middot; PIP'S RUN</div>
+          <div id="hud-right">
+            <div class="hud-group">
+              <span id="hud-coin-dot"></span>
+              <span id="hud-coins" class="hud-coins">0/0</span>
+            </div>
+            <div class="hud-group">
+              <span class="hud-label hud-label-score">SCORE</span>
+              <span id="hud-score" class="hud-val">0</span>
+            </div>
+            <div class="hud-group">
+              <span class="hud-label hud-label-lv">LV</span>
+              <span id="hud-level" class="hud-val">1</span>
+            </div>
+            <div id="hud-hearts"></div>
+          </div>
+        </div>
+
+        <!-- Game viewport -->
+        <div id="viewport">
+          <canvas id="game" width="960" height="540"></canvas>
+
+          <!-- Touch controls -->
+          <div id="pad-left">
+            <button id="btn-left" class="touch-btn" type="button" aria-label="Move left">&#9664;</button>
+            <button id="btn-right" class="touch-btn" type="button" aria-label="Move right">&#9654;</button>
+            <button id="btn-down" class="touch-btn" type="button" aria-label="Duck / fast-fall">&#9660;</button>
+          </div>
+          <div id="pad-right">
+            <button id="btn-fire" class="touch-btn touch-fire" type="button" aria-label="Fire bolt">FIRE</button>
+            <button id="btn-jump" class="touch-btn touch-jump" type="button" aria-label="Jump">JUMP</button>
+          </div>
+
+          <!-- Overlays (toggled by render/hud.ts) -->
+          <div id="ov-title" class="overlay">
+            <div class="ov-logo pulse">LIFE QUEST</div>
+            <div class="ov-sub">PIP'S BIG RUN</div>
+            <div class="ov-help">
+              &#9664; &#9654; / A D &nbsp;&mdash;&nbsp; MOVE<br />
+              SPACE / &#9650; / W &nbsp;&mdash;&nbsp; JUMP<br />
+              &#9660; / S &nbsp;&mdash;&nbsp; DUCK &middot; FAST-FALL<br />
+              F / X &nbsp;&mdash;&nbsp; FIRE (AFTER EATING A MUSHROOM)<br />
+              STOMP SPITTERS &middot; EAT THE MUSHROOM &middot; SHOOT BACK
+            </div>
+            <div class="ov-prompt blink">PRESS SPACE OR TAP TO START</div>
+          </div>
+
+          <div id="ov-gameover" class="overlay hidden">
+            <div class="ov-big ov-big-red">GAME OVER</div>
+            <div class="ov-line">COINS COLLECTED: <span id="go-coins">0</span></div>
+            <div class="ov-line ov-line-gold">SCORE: <span id="go-score">0</span></div>
+            <div class="ov-prompt blink">PRESS SPACE OR TAP TO RETRY</div>
+          </div>
+
+          <div id="ov-levelup" class="overlay hidden">
+            <div class="ov-big ov-big-gold pulse">LEVEL <span id="lu-level">1</span> CLEAR!</div>
+            <div class="ov-line">COINS: <span id="lu-coins">0/0</span> &nbsp; SCORE: <span id="lu-score">0</span></div>
+            <div class="ov-line ov-line-purple ov-center">
+              NEXT: LEVEL <span id="lu-next">2</span> &middot; GLITCH CAVERNS<br />
+              NEW LOOK &middot; NIGHT RUN &middot; MORE GLITCHES
+            </div>
+            <div class="ov-prompt blink">PRESS SPACE OR TAP TO CONTINUE</div>
+          </div>
+
+          <div id="ov-win" class="overlay hidden">
+            <div class="ov-big ov-big-green pulse">LEVEL CLEAR!</div>
+            <div class="ov-line ov-center">PIP MADE IT TO GLOWSTONE CITY!</div>
+            <div class="ov-line ov-line-gold">COINS: <span id="win-coins">0/0</span> &nbsp; SCORE: <span id="win-score">0</span></div>
+            <div class="ov-line ov-line-cyan">BEST SCORE: <span id="win-best">0</span></div>
+            <div class="ov-prompt blink">PRESS SPACE OR TAP TO PLAY AGAIN</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

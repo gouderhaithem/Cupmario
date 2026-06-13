@@ -1,0 +1,240 @@
+/* Life Quest — game chrome. The canvas draws the world; this styles the
+   cabinet, HUD, touch controls and overlays around it (matches the prototype). */
+
+:root {
+  --ink: #11112a;
+  --bg: #0d0d1f;
+  --paper: #f2ead8;
+  --gold: #ffd94a;
+  --cyan: #6ad1ff;
+  --purple: #c79bff;
+  --red: #ff6a6a;
+  --green: #58d68a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: 'Press Start 2P', monospace;
+  overflow: hidden;
+}
+
+#stage {
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Scaled as one unit to preserve aspect ratio (see engine: setupScale). */
+#scaler {
+  flex: 0 0 auto;
+  transform-origin: center center;
+}
+
+#cabinet {
+  width: 960px;
+  height: 592px;
+  background: #181833;
+  border: 4px solid var(--paper);
+  box-shadow: 0 0 0 4px var(--bg), 0 0 0 8px #3a3a6a;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* ---- HUD bar ---- */
+#hud {
+  height: 52px;
+  flex: 0 0 52px;
+  background: #11112a;
+  border-bottom: 4px solid #2a2a55;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  z-index: 5;
+}
+
+#hud-title {
+  color: var(--gold);
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+#hud-right {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+
+.hud-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#hud-coin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid #b3842a;
+}
+
+.hud-coins { font-size: 9px; color: var(--gold); }
+.hud-label { font-size: 8px; }
+.hud-label-score { color: var(--cyan); }
+.hud-label-lv { color: var(--purple); }
+.hud-val { font-size: 9px; color: var(--paper); }
+
+#hud-hearts { display: flex; gap: 5px; }
+.heart { font-size: 15px; }
+.heart-on { color: var(--red); }
+.heart-off { color: #3a3a55; }
+
+/* ---- Viewport + canvas ---- */
+#viewport {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+  background: #7ec0ff;
+}
+
+#game {
+  display: block;
+  width: 960px;
+  height: 540px;
+  background: #7ec0ff;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ---- Touch controls ---- */
+#pad-left {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 10px;
+  z-index: 6;
+}
+
+#pad-right {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.touch-btn {
+  width: 66px;
+  height: 66px;
+  min-width: 44px;
+  min-height: 44px;
+  background: rgba(17, 17, 42, 0.6);
+  border: 3px solid var(--paper);
+  color: var(--paper);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 10px;
+  touch-action: none;
+}
+
+.touch-btn.active { background: var(--gold); color: #11112a; }
+
+.touch-jump {
+  width: 80px;
+  height: 80px;
+  background: rgba(88, 214, 138, 0.75);
+  color: #11112a;
+  font-size: 9px;
+  border-radius: 50%;
+  line-height: 14px;
+}
+
+.touch-jump.active { background: var(--gold); }
+
+.touch-fire {
+  width: 72px;
+  height: 72px;
+  background: rgba(126, 240, 255, 0.7);
+  color: #11112a;
+  font-size: 9px;
+  border-radius: 50%;
+  line-height: 14px;
+}
+
+.touch-fire.active { background: var(--gold); }
+
+/* ---- Overlays ---- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 8;
+  text-align: center;
+}
+
+.overlay.hidden { display: none; }
+
+#ov-title { background: rgba(17, 17, 42, 0.82); gap: 18px; }
+#ov-gameover { background: rgba(40, 12, 16, 0.86); gap: 18px; }
+#ov-levelup { background: rgba(20, 20, 51, 0.88); }
+#ov-win { background: rgba(17, 42, 28, 0.86); }
+
+.ov-logo {
+  font-size: 42px;
+  color: var(--gold);
+  text-shadow: 5px 5px 0 #b3432a;
+}
+
+.ov-sub { font-size: 13px; color: var(--cyan); letter-spacing: 3px; }
+
+.ov-help {
+  margin-top: 14px;
+  font-size: 9px;
+  color: var(--paper);
+  line-height: 22px;
+}
+
+.ov-big { font-size: 36px; }
+.ov-big-red { color: var(--red); text-shadow: 5px 5px 0 #5a0f1a; }
+.ov-big-gold { font-size: 34px; color: var(--gold); text-shadow: 5px 5px 0 #b3842a; }
+.ov-big-green { font-size: 34px; color: var(--green); text-shadow: 5px 5px 0 #1f5a38; }
+
+.ov-line { font-size: 11px; color: var(--paper); letter-spacing: 2px; line-height: 22px; }
+.ov-line-gold { color: var(--gold); }
+.ov-line-cyan { font-size: 9px; color: var(--cyan); letter-spacing: 1px; }
+.ov-line-purple { color: var(--purple); }
+.ov-center { text-align: center; }
+
+.ov-prompt {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--gold);
+}
+
+/* ---- Animations (match prototype) ---- */
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes pulse { 0%, 49% { transform: scale(1); } 50%, 100% { transform: scale(1.05); } }
+
+.blink { animation: blink 1s steps(1) infinite; }
+.pulse { animation: pulse 0.7s steps(1) infinite; }
