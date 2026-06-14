@@ -1,0 +1,19 @@
+{
+  "kind": "boss",
+  "theme": "night",
+  "name": "THE OVERCLOCK",
+  "hp": 54,
+  "arenaCols": 23,
+  "floorPlats": [
+    [8, 3, 3],
+    [6, 9, 2],
+    [8, 12, 3],
+    [5, 17, 3]
+  ],
+  "phases": [
+    { "toHpPct": 75, "cadence": 60, "patterns": ["spitArc", "boltFan", "summonWalkers"] },
+    { "toHpPct": 50, "cadence": 50, "patterns": ["chargeDash", "boltFan", "groundPound"] },
+    { "toHpPct": 25, "cadence": 44, "patterns": ["laserSweep", "teleport", "boltFan", "ringBurst"] },
+    { "toHpPct": 0, "cadence": 34, "patterns": ["ringBurst", "pinkRain", "laserSweep", "boltFan", "chargeDash"] }
+  ]
+}

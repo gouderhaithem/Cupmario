@@ -31,6 +31,16 @@
               <span class="hud-label hud-label-lv">LV</span>
               <span id="hud-level" class="hud-val">1</span>
             </div>
+            <div class="hud-group">
+              <span class="hud-label hud-label-time">TIME</span>
+              <span id="hud-time" class="hud-val">1:15</span>
+            </div>
+            <div class="hud-group">
+              <span class="hud-label hud-label-gun">GUN</span>
+              <span id="hud-weapon" class="hud-val">PEASHOT</span>
+            </div>
+            <div id="hud-hp"></div>
+            <div id="hud-super" aria-label="Super meter"></div>
             <div id="hud-hearts"></div>
           </div>
         </div>
@@ -46,6 +56,9 @@
             <button id="btn-down" class="touch-btn" type="button" aria-label="Duck / fast-fall">&#9660;</button>
           </div>
           <div id="pad-right">
+            <button id="btn-swap" class="touch-btn touch-swap" type="button" aria-label="Switch weapon">GUN</button>
+            <button id="btn-super" class="touch-btn touch-super" type="button" aria-label="Super / EX">SUPER</button>
+            <button id="btn-dash" class="touch-btn touch-dash" type="button" aria-label="Dash">DASH</button>
             <button id="btn-fire" class="touch-btn touch-fire" type="button" aria-label="Fire bolt">FIRE</button>
             <button id="btn-jump" class="touch-btn touch-jump" type="button" aria-label="Jump">JUMP</button>
           </div>
@@ -57,11 +70,16 @@
             <div class="ov-help">
               &#9664; &#9654; / A D &nbsp;&mdash;&nbsp; MOVE<br />
               SPACE / &#9650; / W &nbsp;&mdash;&nbsp; JUMP<br />
-              &#9660; / S &nbsp;&mdash;&nbsp; DUCK &middot; FAST-FALL<br />
-              F / X &nbsp;&mdash;&nbsp; FIRE (AFTER EATING A MUSHROOM)<br />
-              STOMP SPITTERS &middot; EAT THE MUSHROOM &middot; SHOOT BACK
+              &#9660; / S &nbsp;&mdash;&nbsp; DUCK &middot; FAST-FALL (&#9660; IN AIR = SHOOT DOWN)<br />
+              F / X &nbsp;&mdash;&nbsp; FIRE (ALWAYS ARMED) &nbsp;&middot;&nbsp; SHIFT &mdash; DASH<br />
+              Q / E &nbsp;&mdash;&nbsp; SWITCH WEAPON (UNLOCK VIA MUSHROOMS)<br />
+              HOLD K + ARROWS &nbsp;&mdash;&nbsp; AIM IN 8 DIRECTIONS<br />
+              JUMP ON A PINK BOLT &nbsp;&mdash;&nbsp; PARRY (FILLS SUPER)<br />
+              J &nbsp;&mdash;&nbsp; EX SHOT &middot; FULL METER = MEGABLAST<br />
+              P / ESC &nbsp;&mdash;&nbsp; PAUSE &amp; OPTIONS &nbsp;&middot;&nbsp; GAMEPAD SUPPORTED (RIGHT STICK AIMS)
             </div>
             <div class="ov-prompt blink">PRESS SPACE OR TAP TO START</div>
+            <div class="ov-prompt-sub">PRESS &#9660; / S &nbsp;&mdash;&nbsp; STAGE SELECT &amp; BOSS RUSH</div>
           </div>
 
           <div id="ov-gameover" class="overlay hidden">
@@ -72,19 +90,23 @@
           </div>
 
           <div id="ov-levelup" class="overlay hidden">
-            <div class="ov-big ov-big-gold pulse">LEVEL <span id="lu-level">1</span> CLEAR!</div>
+            <div id="lu-title" class="ov-big ov-big-gold pulse">LEVEL 1 CLEAR!</div>
+            <div class="ov-line ov-grade">GRADE <span id="lu-grade" class="grade-badge">A</span> &nbsp; BEST <span id="lu-grade-best" class="grade-badge">A</span></div>
             <div class="ov-line">COINS: <span id="lu-coins">0/0</span> &nbsp; SCORE: <span id="lu-score">0</span></div>
+            <div class="ov-line">TIME: <span id="lu-time">—</span> &nbsp; BEST <span id="lu-time-best">—</span></div>
             <div class="ov-line ov-line-purple ov-center">
-              NEXT: LEVEL <span id="lu-next">2</span> &middot; GLITCH CAVERNS<br />
-              NEW LOOK &middot; NIGHT RUN &middot; MORE GLITCHES
+              <span id="lu-next">NEXT · LEVEL 2</span><br />
+              KEEP YOUR WEAPONS &middot; CHASE A BETTER GRADE
             </div>
             <div class="ov-prompt blink">PRESS SPACE OR TAP TO CONTINUE</div>
           </div>
 
           <div id="ov-win" class="overlay hidden">
-            <div class="ov-big ov-big-green pulse">LEVEL CLEAR!</div>
-            <div class="ov-line ov-center">PIP MADE IT TO GLOWSTONE CITY!</div>
+            <div class="ov-big ov-big-green pulse">SYSTEM PURGED!</div>
+            <div class="ov-line ov-center">PIP OVERCLOCKED THE MACHINE AND WON!</div>
+            <div class="ov-line ov-grade">GRADE <span id="win-grade" class="grade-badge">A</span> &nbsp; BEST <span id="win-grade-best" class="grade-badge">A</span></div>
             <div class="ov-line ov-line-gold">COINS: <span id="win-coins">0/0</span> &nbsp; SCORE: <span id="win-score">0</span></div>
+            <div class="ov-line">TIME: <span id="win-time">—</span> &nbsp; BEST <span id="win-time-best">—</span></div>
             <div class="ov-line ov-line-cyan">BEST SCORE: <span id="win-best">0</span></div>
             <div class="ov-prompt blink">PRESS SPACE OR TAP TO PLAY AGAIN</div>
           </div>

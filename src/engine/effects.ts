@@ -8,6 +8,7 @@ import type { GameState } from '../game/state';
 
 /** Kick off (or strengthen) the screen shake. The stronger trigger wins. */
 export function shakeScreen(state: GameState, magnitude: number): void {
+  if (state.reducedMotion) return; // accessibility: no shake when reduced motion is on
   if (magnitude > state.shake) state.shake = magnitude;
 }
 

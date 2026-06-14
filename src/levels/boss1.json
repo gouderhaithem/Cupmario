@@ -1,0 +1,17 @@
+{
+  "kind": "boss",
+  "theme": "night",
+  "name": "ROOTKIT, THE BURIED KING",
+  "hp": 36,
+  "arenaCols": 21,
+  "floorPlats": [
+    [8, 3, 3],
+    [6, 9, 3],
+    [8, 15, 3]
+  ],
+  "phases": [
+    { "toHpPct": 66, "cadence": 70, "patterns": ["spitArc", "summonWalkers"] },
+    { "toHpPct": 33, "cadence": 55, "patterns": ["boltFan", "chargeDash", "groundPound"] },
+    { "toHpPct": 0, "cadence": 42, "patterns": ["boltFan", "chargeDash", "laserSweep", "groundPound", "pinkRain"] }
+  ]
+}

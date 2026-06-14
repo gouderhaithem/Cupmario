@@ -5,16 +5,22 @@ import './style.css';
 
 import { updateCamera } from './engine/camera';
 import { decayShake } from './engine/effects';
-import { setupInput } from './engine/input';
+import { pollGamepad, setupInput } from './engine/input';
 import { startLoop } from './engine/loop';
 import { PIT_MARGIN, VIEW_H, VIEW_W } from './game/constants';
+import { updateBoss } from './game/boss';
+import { updateCheckpoints } from './game/checkpoint';
 import { updateCoins } from './game/coin';
+import { updateCrumbles } from './game/crumble';
 import { updateEnemies } from './game/enemy';
-import { onAction, reachFlag, loseLife } from './game/flow';
+import { handleMenuKey, reachFlag, loseLife } from './game/flow';
 import { updateMovers } from './game/mover';
 import { updateMushrooms } from './game/mushroom';
+import { updateOrbs } from './game/orbs';
+import { tryParry } from './game/parry';
 import { updatePlayer } from './game/player';
 import { updateProjectiles } from './game/projectile';
+import { updateSuper } from './game/super';
 import { createState } from './game/state';
 import { draw } from './render/render';
 import { updateHud } from './render/hud';
@@ -56,12 +62,37 @@ function main(): void {
   const ctx = getContext();
   const state = createState();
 
-  setupInput(state, () => onAction(state));
+  setupInput(state, (key) => handleMenuKey(state, key));
   setupScale();
+
+  // ---- Boss-arena update: locked camera, boss patterns, instant retry ----
+  const updateBossArena = (): void => {
+    updatePlayer(state);
+    if (updateBoss(state)) return; // contact/KO ended the frame (retry or win)
+    tryParry(state);
+    updateSuper(state);
+    if (updateProjectiles(state)) return; // a bolt forced a retry
+    if (updateEnemies(state)) return; // a summoned add forced a retry
+
+    if (state.player.y > state.level.worldH + PIT_MARGIN) {
+      loseLife(state); // on the boss screen this is an instant retry
+      return;
+    }
+
+    for (let i = state.pops.length - 1; i >= 0; i--) {
+      const po = state.pops[i];
+      po.life -= 1;
+      po.y -= 1;
+      if (po.life <= 0) state.pops.splice(i, 1);
+    }
+
+    updateCamera(state); // clamps to 0 in the tight arena
+  };
 
   // ---- Fixed-step gameplay update ----
   const update = (): void => {
-    if (state.screen !== 'play') return;
+    if (state.screen !== 'play' && state.screen !== 'boss') return;
+    if (state.paused) return; // frozen behind the pause menu
 
     // Settle the screen shake every tick, even while frozen.
     decayShake(state);
@@ -72,10 +103,24 @@ function main(): void {
       return;
     }
 
+    state.runTicks += 1; // run timer for the letter grade
+
+    if (state.screen === 'boss') {
+      updateBossArena();
+      return;
+    }
+
+    if (state.timeLeft > 0) state.timeLeft -= 1; // per-level time budget
+
     updatePlayer(state);
     updateMovers(state); // move platforms + carry the player before other checks
+    updateCrumbles(state); // crumbling platforms (also carry/snap the player)
     updateCoins(state);
+    updateCheckpoints(state); // light posts Pip passes; move the respawn point
     updateMushrooms(state); // drift dropped power-ups + handle pickup
+    tryParry(state); // deflect pink bolts/orbs before they can resolve a hit
+    if (updateOrbs(state)) return; // unparried orb contact cost a life
+    updateSuper(state); // spend the meter: EX shot or MEGABLAST
     if (updateProjectiles(state)) return; // a bolt cost a life this frame
     if (updateEnemies(state)) return; // lost a life this frame
 
@@ -105,6 +150,7 @@ function main(): void {
   // ---- Render (per animation frame): animation clock, world, HUD ----
   const render = (): void => {
     state.frame++;
+    pollGamepad(state, (key) => handleMenuKey(state, key));
     draw(ctx, state);
     updateHud(state);
   };

@@ -16,8 +16,19 @@ import {
 } from './constants';
 import { solid } from './physics';
 import type { GameState } from './state';
+import { WEAPONS, WEAPON_ORDER } from './weapons';
 
 const POP_LIFE = 40;
+
+/** Grant the next not-yet-owned weapon (and equip it). Returns the pickup label. */
+function unlockNextWeapon(state: GameState): string {
+  const next = WEAPON_ORDER.find((id) => !state.weapons.includes(id));
+  if (!next) return 'POWER!';
+  state.weapons.push(next);
+  state.weaponIdx = state.weapons.length - 1;
+  state.charge = 0;
+  return `${WEAPONS[next].name}!`;
+}
 
 /** Add a fresh power mushroom centered on a dead enemy, popping upward. */
 export function spawnMushroom(state: GameState, cx: number, topY: number): void {
@@ -66,13 +77,14 @@ export function updateMushrooms(state: GameState): void {
     if (p.x + p.w > m.x && p.x < m.x + m.w && p.y + p.h > m.y && p.y < m.y + m.h) {
       m.alive = false;
       p.armed = true;
+      const label = unlockNextWeapon(state);
       state.score += POWER_SCORE;
       sfx('power');
       state.pops.push({
         x: m.x + m.w / 2,
         y: m.y,
         life: POP_LIFE,
-        text: 'POWER!',
+        text: label,
         color: PALETTE.popPower,
       });
     }

@@ -95,12 +95,38 @@ html, body {
 .hud-label { font-size: 8px; }
 .hud-label-score { color: var(--cyan); }
 .hud-label-lv { color: var(--purple); }
+.hud-label-time { color: #ff8a7a; }
+.hud-label-gun { color: #7ef0ff; }
 .hud-val { font-size: 9px; color: var(--paper); }
+#hud-weapon { color: #7ef0ff; }
 
 #hud-hearts { display: flex; gap: 5px; }
 .heart { font-size: 15px; }
 .heart-on { color: var(--red); }
 .heart-off { color: #3a3a55; }
+
+#hud-hp { display: flex; gap: 3px; align-items: center; }
+.hp-pip {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  border: 2px solid #11112a;
+}
+.hp-on { background: #58d68a; }
+.hp-off { background: #3a3a55; }
+
+#hud-super { display: flex; gap: 3px; align-items: center; }
+.super-pip {
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  border: 2px solid #11112a;
+  transform: skewX(-12deg);
+}
+.super-on { background: #ff5fb0; }
+.super-off { background: #3a3a55; }
+.super-ready { animation: superPulse 0.5s steps(2) infinite; }
+@keyframes superPulse { 0% { background: #ff5fb0; } 100% { background: #ffd0e8; } }
 
 /* ---- Viewport + canvas ---- */
 #viewport {
@@ -180,6 +206,82 @@ html, body {
 
 .touch-fire.active { background: var(--gold); }
 
+.touch-dash {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 217, 74, 0.5);
+  color: #11112a;
+  font-size: 9px;
+  border-radius: 50%;
+  line-height: 14px;
+}
+
+.touch-dash.active { background: var(--gold); }
+
+.touch-super {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 95, 176, 0.55);
+  color: #11112a;
+  font-size: 9px;
+  border-radius: 50%;
+  line-height: 14px;
+}
+
+.touch-super.active { background: var(--gold); }
+
+.touch-swap {
+  width: 60px;
+  height: 60px;
+  background: rgba(126, 240, 255, 0.5);
+  color: #11112a;
+  font-size: 9px;
+  border-radius: 50%;
+  line-height: 14px;
+}
+
+.touch-swap.active { background: var(--cyan); }
+
+/* ---- Grade badge (§7 letter grades) ---- */
+.grade-badge {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 4px;
+  text-align: center;
+  border-radius: 3px;
+  color: #11112a;
+  background: var(--paper);
+}
+.grade-badge[data-grade="S+"],
+.grade-badge[data-grade="S"] { background: #ffd94a; color: #5a3a00; }
+.grade-badge[data-grade="A"] { background: #58d68a; color: #0a2a16; }
+.grade-badge[data-grade="B"] { background: #7ef0ff; }
+.grade-badge[data-grade="C"] { background: #ff8a7a; }
+.grade-badge[data-grade="—"] { background: #3a3a55; color: var(--paper); }
+
+/* Animated grade tally (§11.3): the freshly-earned grade stamps in when the
+   clear card shows; the "best" badge + time line fade in just after. */
+@keyframes gradeStamp {
+  0% { transform: scale(2.4) rotate(-12deg); opacity: 0; }
+  60% { transform: scale(0.9) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes tallyFade {
+  0%, 35% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.overlay:not(.hidden) #lu-grade,
+.overlay:not(.hidden) #win-grade {
+  animation: gradeStamp 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.overlay:not(.hidden) #lu-grade-best,
+.overlay:not(.hidden) #win-grade-best,
+.overlay:not(.hidden) #lu-time,
+.overlay:not(.hidden) #win-time {
+  display: inline-block;
+  animation: tallyFade 0.7s ease both;
+}
+
 /* ---- Overlays ---- */
 .overlay {
   position: absolute;
@@ -230,6 +332,13 @@ html, body {
   margin-top: 14px;
   font-size: 11px;
   color: var(--gold);
+}
+.ov-prompt-sub {
+  margin-top: 6px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  opacity: 0.85;
 }
 
 /* ---- Animations (match prototype) ---- */

@@ -1,22 +1,42 @@
 // Top-level draw(): background -> tiles -> coins -> mushrooms -> enemies ->
 // bolts -> flag -> player -> score pops. Reads state only (golden rule #4).
 
-import { COLS, ROWS, SKINS, TILE, VIEW_W } from '../game/constants';
+import { COLS, FLASH_FRAMES, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
 import type { GameState } from '../game/state';
 import { drawBackground } from './background';
 import {
+  drawBossHud,
+  drawBossIntro,
+  drawKoCard,
+  drawPauseMenu,
+  drawStageSelect,
+  drawVintage,
+} from './overlays';
+import {
   drawBolt,
+  drawBoss,
+  drawCheckpoint,
   drawCoin,
+  drawCrumble,
   drawFlag,
+  drawFlyer,
   drawFoe,
   drawMover,
   drawMushroom,
+  drawParryOrb,
   drawPip,
   drawSpitter,
   drawTile,
+  drawTurret,
 } from './sprites';
 
 export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
+  // Stage-select is a self-contained menu screen (no world).
+  if (state.screen === 'select') {
+    drawStageSelect(ctx, state);
+    return;
+  }
+
   const { level, camX, frame } = state;
 
   drawBackground(ctx, level.theme, camX, frame);
@@ -48,6 +68,24 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     drawMover(ctx, m);
   }
 
+  // Crumbling platforms.
+  for (const cr of state.crumbles) {
+    if (cr.x + cr.w < camX || cr.x > camX + VIEW_W) continue;
+    drawCrumble(ctx, cr, frame);
+  }
+
+  // Checkpoint posts (behind entities; lit once reached).
+  for (const cp of state.checkpoints) {
+    if (cp.x + TILE < camX || cp.x > camX + VIEW_W) continue;
+    drawCheckpoint(ctx, cp, frame);
+  }
+
+  // Parry-traversal orbs (pink hazards you bounce off mid-air).
+  for (const orb of state.parryOrbs) {
+    if (orb.x + orb.w < camX || orb.x > camX + VIEW_W) continue;
+    drawParryOrb(ctx, orb, frame);
+  }
+
   // Coins (skip collected and off-screen).
   level.coins.forEach((co, i) => {
     if (co.got) return;
@@ -61,21 +99,26 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     drawMushroom(ctx, m);
   }
 
-  // Enemies (Spitters get the hot-colored shooter sprite).
+  // Enemies (each kind gets its own sprite).
   for (const e of state.enemies) {
     if (!e.alive) continue;
     if (e.kind === 'shooter') drawSpitter(ctx, e, frame);
+    else if (e.kind === 'flyer') drawFlyer(ctx, e, frame);
+    else if (e.kind === 'turret') drawTurret(ctx, e);
     else drawFoe(ctx, e, frame);
   }
+
+  // The boss looms in the arena (behind bolts + player).
+  if (state.boss) drawBoss(ctx, state.boss, frame);
 
   // Bolts in flight.
   for (const b of state.projectiles) {
     if (b.x + b.w < camX || b.x > camX + VIEW_W) continue;
-    drawBolt(ctx, b);
+    drawBolt(ctx, b, frame);
   }
 
-  // Flag.
-  drawFlag(ctx, level.flagX, frame);
+  // Flag (run levels only; the boss arena has no flag).
+  if (state.screen !== 'boss') drawFlag(ctx, level.flagX, frame);
 
   // Player (flash while invulnerable).
   const p = state.player;
@@ -97,4 +140,29 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.textAlign = 'left';
 
   ctx.restore();
+
+  // Boss HP bar + phase pips (screen-space, drawn over the world).
+  if (state.boss) drawBossHud(ctx, state.boss);
+
+  // Vintage filter: vignette + faint film grain over the whole frame (§9).
+  // Skipped entirely when reduced motion is on (§13.3) — no flicker/grain.
+  if (!state.reducedMotion) drawVintage(ctx, frame);
+
+  // MEGABLAST flash: a fading white wash over the whole viewport (screen-space).
+  if (state.flash > 0) {
+    ctx.save();
+    ctx.globalAlpha = (state.flash / FLASH_FRAMES) * 0.7;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.restore();
+  }
+
+  // Boss-screen cards: READY?/FIGHT! intro, then a KO card on the death wobble.
+  if (state.screen === 'boss') {
+    if (state.bossIntro > 0) drawBossIntro(ctx, state.bossIntro);
+    if (state.boss?.dead && state.bossKo > 0) drawKoCard(ctx, state.bossKo);
+  }
+
+  // Pause menu, drawn over the frozen world.
+  if (state.paused) drawPauseMenu(ctx, state);
 }

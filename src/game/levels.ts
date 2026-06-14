@@ -1,10 +1,13 @@
 // Ordered level registry. Adding a level = add a JSON file + one import here
 // (and a SKIN entry + music track). Never hardcode a level in game logic.
 
-import type { LevelConfig } from '../types';
+import type { BossConfig, LevelConfig } from '../types';
 import level1 from '../levels/level1.json';
 import level2 from '../levels/level2.json';
 import level3 from '../levels/level3.json';
+import boss1 from '../levels/boss1.json';
+import boss2 from '../levels/boss2.json';
+import boss3 from '../levels/boss3.json';
 
 // JSON is imported as widened types (e.g. number[][], string); the data matches
 // LevelConfig by construction, so assert through unknown.
@@ -13,3 +16,30 @@ export const LEVELS: LevelConfig[] = [
   level2 as unknown as LevelConfig,
   level3 as unknown as LevelConfig,
 ];
+
+// Bosses, in arc order: ROOTKIT → SPECTRA → THE OVERCLOCK (finale).
+export const BOSSES: BossConfig[] = [
+  boss1 as unknown as BossConfig,
+  boss2 as unknown as BossConfig,
+  boss3 as unknown as BossConfig,
+];
+
+/** One stage of the campaign: a run level or a boss arena. */
+export type Stage = { kind: 'level'; level: number } | { kind: 'boss'; boss: number };
+
+/**
+ * The campaign order (§10.3): a boss roughly every two run levels, finishing on
+ * a boss-only finale. A run level that is followed by a boss funnels straight
+ * into the arena with no menu (the §0 "two-faced level" hook).
+ */
+export const CAMPAIGN: Stage[] = [
+  { kind: 'level', level: 0 },
+  { kind: 'level', level: 1 },
+  { kind: 'boss', boss: 0 }, // ROOTKIT
+  { kind: 'level', level: 2 },
+  { kind: 'boss', boss: 1 }, // SPECTRA
+  { kind: 'boss', boss: 2 }, // THE OVERCLOCK (finale)
+];
+
+/** Boss Rush (§11.4): every boss back-to-back, no run levels. */
+export const BOSS_RUSH: Stage[] = BOSSES.map((_, i) => ({ kind: 'boss', boss: i }));

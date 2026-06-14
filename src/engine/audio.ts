@@ -1,7 +1,24 @@
 // All sound is synthesized at runtime (Web Audio oscillators) — no audio files.
 // One lazily-created AudioContext, resumed on first user gesture. Master ~0.5.
 
-type SfxName = 'jump' | 'coin' | 'stomp' | 'die' | 'levelup' | 'win' | 'shoot' | 'power' | 'powerdown';
+type SfxName =
+  | 'jump'
+  | 'coin'
+  | 'stomp'
+  | 'die'
+  | 'levelup'
+  | 'win'
+  | 'shoot'
+  | 'power'
+  | 'powerdown'
+  | 'dash'
+  | 'parry'
+  | 'super'
+  | 'swap'
+  | 'bossHurt'
+  | 'bossPhase'
+  | 'koCard'
+  | 'checkpoint';
 
 let actx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -22,6 +39,11 @@ export function initAudio(): void {
   } catch {
     actx = null;
   }
+}
+
+/** Set the master volume (0..1). No-op until the AudioContext exists. */
+export function setMasterVolume(v: number): void {
+  if (master) master.gain.value = Math.min(1, Math.max(0, v));
 }
 
 /** A single oscillator blip with a short attack/decay envelope. */
@@ -79,6 +101,43 @@ export function sfx(name: SfxName): void {
       beep(440, 0.12, 'sawtooth', 0.18);
       beep(294, 0.18, 'sawtooth', 0.18, 0.1);
       break;
+    case 'dash':
+      // Quick upward whoosh.
+      beep(180, 0.06, 'sawtooth', 0.14);
+      beep(420, 0.08, 'sawtooth', 0.1, 0.03);
+      break;
+    case 'parry':
+      // Bright two-note "DING!".
+      beep(1568, 0.07, 'square', 0.16);
+      beep(2093, 0.12, 'square', 0.13, 0.05);
+      break;
+    case 'super':
+      // Rising power chord into a sparkle.
+      [392, 523, 659, 880, 1175].forEach((f, i) => beep(f, 0.16, 'square', 0.16, i * 0.05));
+      break;
+    case 'swap':
+      // Quick two-note click for changing weapons.
+      beep(660, 0.04, 'square', 0.12);
+      beep(990, 0.05, 'square', 0.1, 0.03);
+      break;
+    case 'bossHurt':
+      // Dull, low thud — the boss takes a hit.
+      beep(160, 0.08, 'square', 0.18);
+      beep(98, 0.12, 'sawtooth', 0.14, 0.04);
+      break;
+    case 'bossPhase':
+      // Ominous descending sting on a phase change / boss intro.
+      [330, 262, 196, 147].forEach((f, i) => beep(f, 0.18, 'sawtooth', 0.16, i * 0.08));
+      break;
+    case 'koCard':
+      // Triumphant KO flourish.
+      [523, 784, 1047, 1568].forEach((f, i) => beep(f, 0.22, 'square', 0.2, i * 0.1));
+      break;
+    case 'checkpoint':
+      // Warm two-note "secured" chime.
+      beep(659, 0.1, 'square', 0.16);
+      beep(988, 0.16, 'square', 0.14, 0.09);
+      break;
   }
 }
 
@@ -108,9 +167,44 @@ export function startMusic(levelIndex: number, isPlaying: () => boolean): void {
   }, stepMs);
 }
 
+/** A darker, driving boss-fight loop (minor key, faster step). */
+const BOSS_TRACK: number[] = [220, 233, 220, 175, 196, 220, 175, 147];
+const BOSS_STEP_BASE = 170;
+let bossPlaying: (() => boolean) | null = null;
+let bossStep = BOSS_STEP_BASE;
+
+/** (Re)start the boss loop at the current tempo, preserving the gate. */
+function runBossLoop(): void {
+  if (musicTimer) clearInterval(musicTimer);
+  let i = 0;
+  musicTimer = setInterval(() => {
+    if (!actx || !bossPlaying || !bossPlaying()) return;
+    const f = BOSS_TRACK[i % BOSS_TRACK.length];
+    beep(f, 0.14, 'sawtooth', 0.05);
+    if (i % 2 === 0) beep(f / 2, 0.2, 'square', 0.05);
+    i++;
+  }, bossStep);
+}
+
+/** Start the boss-fight music. `isPlaying` gates it to the boss screen. */
+export function startBossMusic(isPlaying: () => boolean): void {
+  stopMusic();
+  if (!actx) return;
+  bossPlaying = isPlaying;
+  bossStep = BOSS_STEP_BASE;
+  runBossLoop();
+}
+
+/** Change the boss-music step interval (faster = tenser) and restart the loop. */
+export function setBossTempo(stepMs: number): void {
+  bossStep = Math.max(80, stepMs);
+  if (bossPlaying) runBossLoop();
+}
+
 export function stopMusic(): void {
   if (musicTimer) {
     clearInterval(musicTimer);
     musicTimer = null;
   }
+  bossPlaying = null;
 }
