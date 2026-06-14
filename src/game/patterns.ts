@@ -131,7 +131,10 @@ function pinkRain(state: GameState, _boss: Boss): void {
  * or stand on a platform above it. Doesn't move or die on the arena walls.
  */
 function laserSweep(state: GameState, _boss: Boss): void {
-  const beamY = 10 * TILE - 54; // standing Pip's head; a crouch slips below it
+  // Standing Pip's box top is 58px above the floor (420px crouched). Sit the
+  // beam at 66→44px so it solidly hits a standing Pip's head/torso yet leaves a
+  // ~14px gap over a crouched Pip — crouching cleanly ducks the laser.
+  const beamY = 10 * TILE - 66;
   state.projectiles.push({
     x: TILE,
     y: beamY,
@@ -186,6 +189,24 @@ function ringBurst(state: GameState, boss: Boss): void {
   }
 }
 
+/**
+ * SPECTRA's signature electric discharge: two concentric rings — a fast inner
+ * ring and a slower outer ring offset half a step — so the bolts read as an
+ * expanding shockwave you weave through. Every 4th inner bolt is parryable.
+ */
+function sparkNova(state: GameState, boss: Boss): void {
+  const cx = boss.x + boss.w / 2 - BOLT_W / 2;
+  const cy = boss.y + boss.h / 2 - BOLT_H / 2;
+  for (let i = 0; i < RING_COUNT; i++) {
+    const a = (i / RING_COUNT) * Math.PI * 2;
+    bolt(state, cx, cy, Math.cos(a) * RING_SPEED * 1.6, Math.sin(a) * RING_SPEED * 1.6, {
+      parryable: i % 4 === 0,
+    });
+    const a2 = a + Math.PI / RING_COUNT;
+    bolt(state, cx, cy, Math.cos(a2) * RING_SPEED * 0.85, Math.sin(a2) * RING_SPEED * 0.85);
+  }
+}
+
 const PATTERNS: Record<PatternName, (state: GameState, boss: Boss) => void> = {
   spitArc,
   boltFan,
@@ -196,6 +217,7 @@ const PATTERNS: Record<PatternName, (state: GameState, boss: Boss) => void> = {
   chargeDash,
   teleport,
   ringBurst,
+  sparkNova,
 };
 
 /** Run a named pattern. Unknown names are ignored (data is validated upstream). */

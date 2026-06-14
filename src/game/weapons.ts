@@ -16,7 +16,7 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
     sizeMult: 0.85,
     pellets: 4,
     spread: 0.7,
-    range: 17, // ~130px: a close-range shotgun, weak at distance
+    range: 17, // ~130px: a close-range shotgun, weak at distance (retired from rotation)
   },
   lobber: {
     id: 'lobber',
@@ -47,8 +47,12 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
   },
 };
 
-/** Unlock order: mushrooms grant the next not-yet-owned weapon in this list. */
-export const WEAPON_ORDER: WeaponId[] = ['peashot', 'spread', 'lobber', 'charge', 'homing'];
+/**
+ * Unlock order: mushrooms grant the next not-yet-owned weapon in this list.
+ * 2nd pickup is HOMING (the boss-style "follow the enemy" shot); the old SPREAD
+ * is retired from rotation (kept in WEAPONS only for type completeness + Super).
+ */
+export const WEAPON_ORDER: WeaponId[] = ['peashot', 'homing', 'lobber', 'charge'];
 
 /** The weapon Pip currently has equipped. */
 export function currentWeapon(state: GameState): Weapon {

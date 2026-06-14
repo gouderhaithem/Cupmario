@@ -1,6 +1,6 @@
 // All gameplay constants live here (golden rule #3). No magic numbers in logic.
 
-import type { Skin } from '../types';
+import type { BossShape, BossSkin, Skin } from '../types';
 
 // ---- World grid ----
 export const TILE = 45;
@@ -177,8 +177,12 @@ export const TELEPORT_FLASH = 6;
 /** Hover heights a teleport alternates between (teaches up/down aiming). */
 export const TELEPORT_HIGH_Y = 2 * TILE;
 export const TELEPORT_LOW_Y = 5 * TILE;
-/** How far ducking lowers Pip's profile vs. a beam (px) — lets a crouch slip under. */
-export const CROUCH_DUCK = 28;
+/**
+ * Crouched collision-box height (px). Pip shrinks from 58→30 when ducking so he
+ * fits under a one-tile (45px) gap to crawl beneath low platforms. The 28px drop
+ * (PLAYER_H − CROUCH_H) also lowers his profile under a sweeping beam.
+ */
+export const CROUCH_H = 30;
 
 // ---- Mushroom power-up ----
 export const MUSHROOM_W = 30;
@@ -307,6 +311,17 @@ export const PALETTE = {
   powblockHi: '#f08aff',
   combo: '#ffd34d',
 } as const;
+
+// ---- Per-boss looks (index = boss index, see levels.ts BOSSES) ----
+// Each boss gets a distinct color set + silhouette so the fights don't look
+// like reskins. ROOTKIT = earthy purple roots; SPECTRA = electric cyan wire;
+// THE OVERCLOCK = molten-red machine.
+export const BOSS_SKINS: BossSkin[] = [
+  { body: '#5d4b8c', bodyDk: '#3a2d5c', bodyLo: '#241a3a', accent: '#7a64b0', eye: '#ff5fb0', crown: '#ffd94a' },
+  { body: '#21c6e6', bodyDk: '#1c6b80', bodyLo: '#0a2e3a', accent: '#d4faff', eye: '#fff35a', crown: '#9ff4ff' },
+  { body: '#c4452f', bodyDk: '#822a1f', bodyLo: '#360f0a', accent: '#ff8a3c', eye: '#7ef0ff', crown: '#ff8a3c' },
+];
+export const BOSS_SHAPES: BossShape[] = ['roots', 'wire', 'machine'];
 
 // ---- Per-level player outfits (index = level index) ----
 // Level 1 = blue explorer; Level 2 = red hair / green shirt / purple pants.

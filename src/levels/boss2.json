@@ -2,16 +2,19 @@
   "kind": "boss",
   "theme": "night",
   "name": "SPECTRA, THE LIVE WIRE",
-  "hp": 42,
+  "hp": 44,
   "arenaCols": 21,
   "floorPlats": [
-    [8, 3, 3],
-    [5, 9, 3],
-    [8, 15, 3]
+    [8, 2, 3],
+    [6, 5, 3],
+    [8, 9, 3],
+    [6, 12, 3],
+    [8, 16, 3]
   ],
   "phases": [
-    { "toHpPct": 66, "cadence": 64, "patterns": ["boltFan", "teleport"] },
-    { "toHpPct": 33, "cadence": 52, "patterns": ["laserSweep", "teleport", "boltFan"] },
-    { "toHpPct": 0, "cadence": 40, "patterns": ["laserSweep", "teleport", "pinkRain", "boltFan"] }
+    { "toHpPct": 70, "cadence": 54, "patterns": ["teleport", "ringBurst", "boltFan"] },
+    { "toHpPct": 45, "cadence": 44, "patterns": ["teleport", "laserSweep", "sparkNova"] },
+    { "toHpPct": 20, "cadence": 36, "patterns": ["teleport", "sparkNova", "pinkRain", "laserSweep"] },
+    { "toHpPct": 0, "cadence": 28, "patterns": ["sparkNova", "laserSweep", "ringBurst", "pinkRain", "teleport"] }
   ]
 }

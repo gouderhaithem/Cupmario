@@ -28,16 +28,16 @@ export const BOSSES: BossConfig[] = [
 export type Stage = { kind: 'level'; level: number } | { kind: 'boss'; boss: number };
 
 /**
- * The campaign order (§10.3): a boss roughly every two run levels, finishing on
- * a boss-only finale. A run level that is followed by a boss funnels straight
- * into the arena with no menu (the §0 "two-faced level" hook).
+ * The campaign order: every run level ends with its own boss — clearing the
+ * flag funnels straight into that level's arena with no menu (the §0
+ * "two-faced level" hook). Each level/boss pair, in arc order.
  */
 export const CAMPAIGN: Stage[] = [
   { kind: 'level', level: 0 },
-  { kind: 'level', level: 1 },
   { kind: 'boss', boss: 0 }, // ROOTKIT
-  { kind: 'level', level: 2 },
+  { kind: 'level', level: 1 },
   { kind: 'boss', boss: 1 }, // SPECTRA
+  { kind: 'level', level: 2 },
   { kind: 'boss', boss: 2 }, // THE OVERCLOCK (finale)
 ];
 

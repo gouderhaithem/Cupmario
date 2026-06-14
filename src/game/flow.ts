@@ -256,7 +256,7 @@ export function bossDefeated(state: GameState): void {
 export function enterBoss(state: GameState, bossIndex: number): void {
   const cfg = BOSSES[Math.min(bossIndex, BOSSES.length - 1)];
   state.level = buildBossArena(cfg);
-  state.boss = makeBoss(cfg, state.level);
+  state.boss = makeBoss(cfg, state.level, bossIndex);
   state.player = spawnPlayer(state.level, state.maxHp);
   state.enemies = [];
   state.movers = [];

@@ -6,8 +6,9 @@
   "arenaCols": 21,
   "floorPlats": [
     [8, 3, 3],
-    [6, 9, 3],
-    [8, 15, 3]
+    [6, 6, 3],
+    [8, 11, 3],
+    [6, 14, 3]
   ],
   "phases": [
     { "toHpPct": 66, "cadence": 70, "patterns": ["spitArc", "summonWalkers"] },

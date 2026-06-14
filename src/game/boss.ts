@@ -9,6 +9,8 @@ import {
   BOSS_BOB_SPEED,
   BOSS_BOLT_DAMAGE,
   BOSS_DASH_SPEED,
+  BOSS_SHAPES,
+  BOSS_SKINS,
   BOSS_DESCEND_SPEED,
   BOSS_EX_DAMAGE,
   BOSS_H,
@@ -34,10 +36,14 @@ import type { Boss, BossConfig, Level } from '../types';
 const KO_POP_LIFE = 60;
 
 /** Build the live boss for an arena, hovering above the floor at center. */
-export function makeBoss(cfg: BossConfig, level: Level): Boss {
+export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
   const homeY = 2 * TILE;
+  const skin = BOSS_SKINS[Math.min(index, BOSS_SKINS.length - 1)];
+  const shape = BOSS_SHAPES[Math.min(index, BOSS_SHAPES.length - 1)];
   return {
     name: cfg.name,
+    skin,
+    shape,
     x: level.worldW / 2 - BOSS_W / 2,
     y: homeY,
     w: BOSS_W,

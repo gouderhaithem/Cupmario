@@ -18,9 +18,20 @@ describe('WEAPONS roster', () => {
     }
   });
 
-  it('orders every weapon exactly once for the unlock sequence', () => {
-    const ids = Object.keys(WEAPONS) as WeaponId[];
-    expect([...WEAPON_ORDER].sort()).toEqual([...ids].sort());
+  it('lists each unlock-order entry once, with no duplicates', () => {
+    const unique = new Set(WEAPON_ORDER);
+    expect(unique.size).toBe(WEAPON_ORDER.length);
+  });
+
+  it('only unlocks real weapons, and starts with the peashot', () => {
+    const ids = new Set(Object.keys(WEAPONS));
+    for (const id of WEAPON_ORDER) expect(ids.has(id)).toBe(true);
+    expect(WEAPON_ORDER[0]).toBe('peashot');
+  });
+
+  it('retires SPREAD from the rotation (replaced by the HOMING follow-shot)', () => {
+    expect(WEAPON_ORDER).not.toContain('spread');
+    expect(WEAPON_ORDER).toContain('homing');
   });
 });
 

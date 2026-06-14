@@ -2,7 +2,7 @@
 // contact; enemy bolts (from Spitters) hurt Pip. Bolts die on any solid tile
 // or when they leave the world. Runs after enemies so positions are settled.
 
-import { BOLT_GRAV, CROUCH_DUCK, HOMING_TURN, TILE } from './constants';
+import { BOLT_GRAV, HOMING_TURN, TILE } from './constants';
 import { enemyBoltMult } from './difficulty';
 import { killEnemy } from './enemy';
 import { hitPlayer } from './flow';
@@ -77,14 +77,14 @@ export function updateProjectiles(state: GameState): boolean {
         continue;
       }
       b.life = (b.life ?? 0) - 1;
-      const pTop = p.y + (p.crouch ? CROUCH_DUCK : 0);
-      const pH = p.h - (p.crouch ? CROUCH_DUCK : 0);
+      // Crouch shrinks Pip's real hitbox (see updateCrouch), so a ducked profile
+      // already slips under a sweeping beam — no separate duck offset needed.
       if (
         p.hurt <= 0 &&
         b.x + b.w > p.x &&
         b.x < p.x + p.w &&
-        b.y + b.h > pTop &&
-        b.y < pTop + pH
+        b.y + b.h > p.y &&
+        b.y < p.y + p.h
       ) {
         if (hitPlayer(state)) {
           lostLife = true;

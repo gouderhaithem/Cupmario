@@ -322,7 +322,8 @@ export type PatternName =
   | 'laserSweep'
   | 'chargeDash'
   | 'teleport'
-  | 'ringBurst';
+  | 'ringBurst'
+  | 'sparkNova';
 
 /** One stage of a boss fight: gets faster and nastier as HP drops. */
 export interface BossPhase {
@@ -332,6 +333,25 @@ export interface BossPhase {
   cadence: number;
   /** Patterns this phase cycles through, in order. */
   patterns: PatternName[];
+}
+
+/** Visual silhouette for a boss (drives appendages + headpiece in the sprite). */
+export type BossShape = 'roots' | 'wire' | 'machine';
+
+/** Per-boss color set so each fight looks distinct (chosen by boss index). */
+export interface BossSkin {
+  /** Main body fill. */
+  body: string;
+  /** Darker body shade (outline/base). */
+  bodyDk: string;
+  /** Darkest shade (lower blob + mouth). */
+  bodyLo: string;
+  /** Bright top stripe / trim accent. */
+  accent: string;
+  /** Eye glow. */
+  eye: string;
+  /** Crown / headpiece color. */
+  crown: string;
 }
 
 /** Authored boss + arena data (src/levels/boss*.json). */
@@ -350,6 +370,9 @@ export interface BossConfig {
 /** The live boss during a fight. */
 export interface Boss {
   name: string;
+  /** Color set + silhouette so each boss reads as a distinct character. */
+  skin: BossSkin;
+  shape: BossShape;
   x: number;
   y: number;
   w: number;

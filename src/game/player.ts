@@ -11,6 +11,7 @@ import {
   CHARGE_MAX,
   CHARGE_SIZE_MULT,
   COYOTE_FRAMES,
+  CROUCH_H,
   CROUCH_SPEED_MULT,
   FASTFALL_CAP,
   FASTFALL_MULT,
@@ -20,13 +21,15 @@ import {
   JUMP_BUFFER_FRAMES,
   JUMP_CUT_MULT,
   MAXFALL,
+  PLAYER_H,
   SPEED,
+  TILE,
 } from './constants';
 import { bumpBlocks } from './blocks';
 import { updateDash } from './dash';
-import { collideX, collideY } from './physics';
+import { collideX, collideY, solid } from './physics';
 import type { GameState } from './state';
-import type { Player, Weapon } from '../types';
+import type { Level, Player, Weapon } from '../types';
 import { currentWeapon } from './weapons';
 
 /** Diagonal velocity normalizer so diagonal bolts aren't faster than cardinal. */
@@ -53,6 +56,15 @@ function aimVector(state: GameState, p: Player): { ax: number; ay: number } {
     if (ax === 0 && ay === 0) ax = p.face; // locked but no direction → face
   } else if (keys.down && !p.onGround) {
     ay = 1; // down-shot in the air
+  } else if (state.boss) {
+    // Boss fights: auto-aim at the boss so an overhead boss is hittable with any
+    // gun. Manual Lock-aim (above) and the air down-shot still override this.
+    const bx = state.boss.x + state.boss.w / 2;
+    const by = state.boss.y + state.boss.h / 2;
+    const dx = bx - (p.x + p.w / 2);
+    const dy = by - (p.y + p.h * 0.42);
+    const len = Math.hypot(dx, dy) || 1;
+    return { ax: dx / len, ay: dy / len };
   } else {
     ax = p.face;
   }
@@ -93,6 +105,12 @@ export function updatePlayer(state: GameState): void {
   }
   if (state.jumpBuffer > 0) state.jumpBuffer -= 1;
 
+  // Ducking on the ground: a real hitbox shrink (58→30) so Pip can crawl under
+  // low platforms. Feet stay planted (we grow/shrink from the head). Standing
+  // back up is blocked while a solid tile is directly overhead, so a crouch held
+  // under a brick stays a crouch instead of clipping Pip into it.
+  updateCrouch(state);
+
   // Horizontal: accelerate toward the target speed, decelerate via friction
   // when there's no input. Gives weighty, non-binary control.
   let dir = 0;
@@ -101,7 +119,7 @@ export function updatePlayer(state: GameState): void {
     if (keys.right) dir += 1;
   }
   if (dir !== 0) {
-    const target = dir * SPEED;
+    const target = dir * SPEED * (p.crouch ? CROUCH_SPEED_MULT : 1);
     if (p.vx < target) p.vx = Math.min(target, p.vx + ACCEL);
     else if (p.vx > target) p.vx = Math.max(target, p.vx - ACCEL);
     p.face = dir < 0 ? -1 : 1;
@@ -139,15 +157,9 @@ export function updatePlayer(state: GameState): void {
     }
   }
 
-  // Down button: duck on the ground, fast-fall in the air.
-  p.crouch = false;
-  if (keys.down) {
-    if (p.onGround) {
-      p.crouch = true;
-      p.vx *= CROUCH_SPEED_MULT;
-    } else if (p.vy > 0) {
-      p.vy = Math.min(FASTFALL_CAP, p.vy + GRAVITY * FASTFALL_MULT);
-    }
+  // Down in the air: fast-fall (ground ducking is handled in the crawl above).
+  if (keys.down && !p.onGround && p.vy > 0) {
+    p.vy = Math.min(FASTFALL_CAP, p.vy + GRAVITY * FASTFALL_MULT);
   }
 
   // Horizontal move + clamp to world + tile collision.
@@ -189,6 +201,49 @@ export function updatePlayer(state: GameState): void {
   } else if (!keys.shoot) {
     state.shootLatch = false;
   }
+}
+
+/**
+ * Resize Pip's collision box for ducking. Crouch (Down on the ground) shrinks
+ * him to CROUCH_H, keeping his feet planted by lowering the box top. He only
+ * stands back up when the full-height box has clear headroom — otherwise he
+ * stays crouched (e.g. while still under a low brick).
+ */
+function updateCrouch(state: GameState): void {
+  const p = state.player;
+  resizeCrouch(state.level, p, state.keys.down && p.onGround);
+}
+
+/**
+ * Apply a crouch resize to Pip's box. Entering a crouch shrinks him to CROUCH_H
+ * with his feet planted; leaving one restores full height only when the space
+ * overhead is clear. Pure (mutates `p`) so it can be unit-tested directly.
+ */
+export function resizeCrouch(level: Level, p: Player, wantCrouch: boolean): void {
+  const isCrouched = p.h < PLAYER_H;
+  if (wantCrouch && !isCrouched) {
+    p.y += PLAYER_H - CROUCH_H;
+    p.h = CROUCH_H;
+  } else if (!wantCrouch && isCrouched && canStandUp(level, p)) {
+    p.y -= PLAYER_H - CROUCH_H;
+    p.h = PLAYER_H;
+  }
+  p.crouch = p.h < PLAYER_H;
+}
+
+/** True when the space above a crouched Pip is clear enough to stand up into. */
+function canStandUp(level: Level, p: Player): boolean {
+  const newTop = p.y - (PLAYER_H - CROUCH_H);
+  const lft = Math.floor(p.x / TILE);
+  const rgt = Math.floor((p.x + p.w - 1) / TILE);
+  const rTop = Math.floor(newTop / TILE);
+  const rBot = Math.floor((p.y - 1) / TILE);
+  for (let r = rTop; r <= rBot; r++) {
+    for (let c = lft; c <= rgt; c++) {
+      if (solid(level, c, r)) return false;
+    }
+  }
+  return true;
 }
 
 /**
