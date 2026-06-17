@@ -2,8 +2,59 @@
 // checkpoints, and the goal flag.
 
 import { PALETTE, TILE } from '../../game/constants';
-import type { Checkpoint, Mushroom, ParryOrb, Projectile } from '../../types';
+import type { Checkpoint, Hazard, Mushroom, ParryOrb, Projectile } from '../../types';
 import { rect } from './util';
+
+/**
+ * A boss-arena hazard: a ground pillar (BARKBROOD roots / GRANITE spikes) or a
+ * frozen floor segment (RIME). Both flash a warning while telegraphing, then lethal.
+ */
+export function drawHazard(ctx: CanvasRenderingContext2D, hz: Hazard, frame: number): void {
+  if (hz.kind === 'pillar') {
+    if (hz.warn > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.3 + Math.sin(frame * 0.5) * 0.2;
+      rect(ctx, hz.x, hz.y + hz.h - 6, hz.w, 6, '#ffcaa0'); // cracking footprint
+      ctx.strokeStyle = '#8a5a30';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.strokeRect(hz.x + 1, hz.y + 1, hz.w - 2, hz.h - 2);
+      ctx.restore();
+    } else {
+      rect(ctx, hz.x, hz.y, hz.w, hz.h, '#6b431f');
+      rect(ctx, hz.x, hz.y, hz.w, 10, '#8a5a30');
+      ctx.fillStyle = '#5a3318'; // jagged spike top
+      ctx.beginPath();
+      ctx.moveTo(hz.x, hz.y);
+      ctx.lineTo(hz.x + hz.w / 2, hz.y - 14);
+      ctx.lineTo(hz.x + hz.w, hz.y);
+      ctx.fill();
+      rect(ctx, hz.x + 4, hz.y + 6, 4, hz.h - 12, 'rgba(88,214,138,0.4)');
+      rect(ctx, hz.x + hz.w - 8, hz.y + 6, 4, hz.h - 12, 'rgba(88,214,138,0.4)');
+    }
+    return;
+  }
+  // shock floor segment
+  if (hz.warn > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.3 + Math.sin(frame * 0.6) * 0.25;
+    rect(ctx, hz.x, hz.y + hz.h - 5, hz.w, 5, '#4fd9ff');
+    ctx.restore();
+  } else {
+    ctx.save();
+    rect(ctx, hz.x, hz.y, hz.w, hz.h, 'rgba(79,217,255,0.32)');
+    ctx.strokeStyle = '#d4faff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(hz.x, hz.y + hz.h - 4);
+    for (let x = hz.x; x < hz.x + hz.w; x += 14) {
+      const up = (Math.floor(x / 14) + frame) % 2 === 0;
+      ctx.lineTo(x + 14, hz.y + (up ? 6 : hz.h - 6));
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
 
 /** A spinning coin: width oscillates with a per-coin phase. */
 export function drawCoin(ctx: CanvasRenderingContext2D, cx: number, cy: number, idx: number, frame: number): void {
@@ -49,7 +100,107 @@ export function drawMushroom(ctx: CanvasRenderingContext2D, m: Mushroom): void {
   ctx.fill();
 }
 
-/** A bolt: a glowing capsule. Parryable bolts pulse pink with a halo + cue. */
+/** A round energy capsule (default bolt + Spitter fire). */
+function drawCapsule(ctx: CanvasRenderingContext2D, b: Projectile, cx: number, cy: number, core: string, hi: string): void {
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, b.w / 2, b.h / 2, 0, 0, 7);
+  ctx.fill();
+  ctx.fillStyle = hi;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, b.w / 4, b.h / 4, 0, 0, 7);
+  ctx.fill();
+}
+
+/** A thin fast tracer drawn along its velocity, with a hot tip (Turret dart). */
+function drawDart(ctx: CanvasRenderingContext2D, b: Projectile, cx: number, cy: number, core: string, hi: string): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.atan2(b.vy, b.vx));
+  ctx.fillStyle = core;
+  ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+  ctx.fillStyle = hi;
+  ctx.fillRect(-b.w / 2, -1, b.w, 2); // bright streak
+  ctx.fillRect(b.w / 2 - 4, -b.h / 2, 4, b.h); // hot leading tip
+  ctx.restore();
+}
+
+/** A heavy round shell/bomb with a dark outline + flickering fuse (Mortar/Bomber). */
+function drawLob(ctx: CanvasRenderingContext2D, b: Projectile, cx: number, cy: number, core: string, hi: string, frame: number): void {
+  const r = b.w / 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, r + 2, r + 2, 0, 0, 7);
+  ctx.fill();
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, r, r, 0, 0, 7);
+  ctx.fill();
+  ctx.fillStyle = hi;
+  ctx.beginPath();
+  ctx.ellipse(cx - r * 0.3, cy - r * 0.3, r * 0.3, r * 0.3, 0, 0, 7);
+  ctx.fill();
+  if (frame % 6 < 3) {
+    ctx.fillStyle = hi;
+    ctx.fillRect(cx - 2, cy - r - 5, 4, 5); // fuse spark
+  }
+}
+
+/** A jagged 4-point star burst. */
+function drawSpark(ctx: CanvasRenderingContext2D, b: Projectile, cx: number, cy: number, core: string, hi: string): void {
+  const o = b.w / 2;
+  const i = o * 0.4;
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - o);
+  ctx.lineTo(cx + i, cy - i);
+  ctx.lineTo(cx + o, cy);
+  ctx.lineTo(cx + i, cy + i);
+  ctx.lineTo(cx, cy + o);
+  ctx.lineTo(cx - i, cy + i);
+  ctx.lineTo(cx - o, cy);
+  ctx.lineTo(cx - i, cy - i);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = hi;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, i * 0.7, i * 0.7, 0, 0, 7);
+  ctx.fill();
+}
+
+/** A parryable (pink) bolt: pulsing halo + white ring/cross cue (§12.3). */
+function drawParryable(ctx: CanvasRenderingContext2D, b: Projectile, cx: number, cy: number, frame: number): void {
+  ctx.save();
+  ctx.globalAlpha = 0.35 + Math.sin(frame * 0.3) * 0.2;
+  ctx.fillStyle = PALETTE.boltPinkHi;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, b.w * 0.85, b.h * 0.95, 0, 0, 7);
+  ctx.fill();
+  ctx.restore();
+
+  drawCapsule(ctx, b, cx, cy, PALETTE.boltPink, PALETTE.boltPinkHi);
+
+  ctx.save();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, b.w * 0.6, b.h * 0.7, 0, 0, 7);
+  ctx.stroke();
+  const s = b.h * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy);
+  ctx.lineTo(cx + s, cy);
+  ctx.moveTo(cx, cy - s);
+  ctx.lineTo(cx, cy + s);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * A bolt. Parryables always render as the pink "parry me" capsule (the gameplay
+ * tell). Other shots draw by `style` and honor a per-shot `tint`, so each enemy's
+ * fire reads as a distinct weapon.
+ */
 export function drawBolt(ctx: CanvasRenderingContext2D, b: Projectile, frame: number): void {
   // Boss beam: a dashed warning line while telegraphing, a hot bar once lethal.
   if (b.beam) {
@@ -77,47 +228,19 @@ export function drawBolt(ctx: CanvasRenderingContext2D, b: Projectile, frame: nu
 
   const cx = b.x + b.w / 2;
   const cy = b.y + b.h / 2;
-  const core = b.parryable ? PALETTE.boltPink : b.from === 'player' ? PALETTE.boltPlayer : PALETTE.boltEnemy;
-  const hi = b.parryable ? PALETTE.boltPinkHi : b.from === 'player' ? PALETTE.boltPlayerHi : PALETTE.boltEnemyHi;
 
-  // Pulsing halo marks a parryable bolt as a target.
   if (b.parryable) {
-    ctx.save();
-    ctx.globalAlpha = 0.35 + Math.sin(frame * 0.3) * 0.2;
-    ctx.fillStyle = PALETTE.boltPinkHi;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, b.w * 0.85, b.h * 0.95, 0, 0, 7);
-    ctx.fill();
-    ctx.restore();
+    drawParryable(ctx, b, cx, cy, frame);
+    return;
   }
 
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, b.w / 2, b.h / 2, 0, 0, 7);
-  ctx.fill();
-  ctx.fillStyle = hi;
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, b.w / 4, b.h / 4, 0, 0, 7);
-  ctx.fill();
+  const core = b.from === 'player' ? PALETTE.boltPlayer : b.tint ?? PALETTE.boltEnemy;
+  const hi = b.from === 'player' ? PALETTE.boltPlayerHi : b.tintHi ?? PALETTE.boltEnemyHi;
 
-  // Colorblind cue (§12.3): parryables also wear a white ring + spark cross, so
-  // "you can parry this" reads from shape/luminance, not pink hue alone.
-  if (b.parryable) {
-    ctx.save();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, b.w * 0.6, b.h * 0.7, 0, 0, 7);
-    ctx.stroke();
-    const s = b.h * 0.5;
-    ctx.beginPath();
-    ctx.moveTo(cx - s, cy);
-    ctx.lineTo(cx + s, cy);
-    ctx.moveTo(cx, cy - s);
-    ctx.lineTo(cx, cy + s);
-    ctx.stroke();
-    ctx.restore();
-  }
+  if (b.style === 'dart') drawDart(ctx, b, cx, cy, core, hi);
+  else if (b.style === 'lob') drawLob(ctx, b, cx, cy, core, hi, frame);
+  else if (b.style === 'spark') drawSpark(ctx, b, cx, cy, core, hi);
+  else drawCapsule(ctx, b, cx, cy, core, hi);
 }
 
 /**

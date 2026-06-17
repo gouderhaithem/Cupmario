@@ -1,7 +1,7 @@
 {
   "kind": "boss",
   "theme": "night",
-  "name": "THE OVERCLOCK",
+  "name": "RIME, THE FROST SPIRE",
   "hp": 54,
   "arenaCols": 23,
   "floorPlats": [
@@ -11,10 +11,13 @@
     [6, 13, 3],
     [8, 17, 3]
   ],
+  "moveMode": "stoke",
+  "boltTint": "#9fe8ff",
+  "boltTintHi": "#eafcff",
   "phases": [
-    { "toHpPct": 75, "cadence": 60, "patterns": ["spitArc", "boltFan", "summonWalkers"] },
-    { "toHpPct": 50, "cadence": 50, "patterns": ["chargeDash", "boltFan", "groundPound"] },
-    { "toHpPct": 25, "cadence": 44, "patterns": ["laserSweep", "teleport", "boltFan", "ringBurst"] },
-    { "toHpPct": 0, "cadence": 34, "patterns": ["ringBurst", "pinkRain", "laserSweep", "boltFan", "chargeDash"] }
+    { "toHpPct": 75, "cadence": 60, "patterns": ["boltFan", "floorPulse", "ringBurst"] },
+    { "toHpPct": 50, "cadence": 50, "patterns": ["boltFan", "pinkRain", "sparkNova"] },
+    { "toHpPct": 25, "cadence": 44, "patterns": ["floorPulse", "laserSweep", "ringBurst", "pinkRain"] },
+    { "toHpPct": 0, "cadence": 34, "patterns": ["sparkNova", "laserSweep", "ringBurst", "boltFan", "floorPulse"] }
   ]
 }

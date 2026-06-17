@@ -5,7 +5,7 @@ import './style.css';
 
 import { updateCamera } from './engine/camera';
 import { decayShake } from './engine/effects';
-import { pollGamepad, setupInput } from './engine/input';
+import { applyTouchControls, pollGamepad, setupInput } from './engine/input';
 import { startLoop } from './engine/loop';
 import { PIT_MARGIN, VIEW_H, VIEW_W } from './game/constants';
 import { updateBoss } from './game/boss';
@@ -14,6 +14,7 @@ import { updateCoins } from './game/coin';
 import { updateCrumbles } from './game/crumble';
 import { updateEnemies } from './game/enemy';
 import { handleMenuKey, reachFlag, loseLife } from './game/flow';
+import { updateHazards } from './game/hazard';
 import { updateMovers } from './game/mover';
 import { updateMushrooms } from './game/mushroom';
 import { updateOrbs } from './game/orbs';
@@ -63,6 +64,7 @@ function main(): void {
   const state = createState();
 
   setupInput(state, (key) => handleMenuKey(state, key));
+  applyTouchControls(state.showTouchControls);
   setupScale();
 
   // ---- Boss-arena update: locked camera, boss patterns, instant retry ----
@@ -73,6 +75,7 @@ function main(): void {
     updateSuper(state);
     if (updateProjectiles(state)) return; // a bolt forced a retry
     if (updateEnemies(state)) return; // a summoned add forced a retry
+    if (updateHazards(state)) return; // a root pillar / floor zap forced a retry
 
     if (state.player.y > state.level.worldH + PIT_MARGIN) {
       loseLife(state); // on the boss screen this is an instant retry

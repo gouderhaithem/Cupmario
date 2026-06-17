@@ -1,7 +1,7 @@
 {
   "kind": "boss",
   "theme": "night",
-  "name": "ROOTKIT, THE BURIED KING",
+  "name": "BARKBROOD, THE ELDER OAK",
   "hp": 36,
   "arenaCols": 21,
   "floorPlats": [
@@ -10,9 +10,12 @@
     [8, 11, 3],
     [6, 14, 3]
   ],
+  "moveMode": "planted",
+  "boltTint": "#8fd96a",
+  "boltTintHi": "#d6ffb0",
   "phases": [
-    { "toHpPct": 66, "cadence": 70, "patterns": ["spitArc", "summonWalkers"] },
-    { "toHpPct": 33, "cadence": 55, "patterns": ["boltFan", "chargeDash", "groundPound"] },
-    { "toHpPct": 0, "cadence": 42, "patterns": ["boltFan", "chargeDash", "laserSweep", "groundPound", "pinkRain"] }
+    { "toHpPct": 66, "cadence": 70, "patterns": ["spitArc", "rootPillars", "summonWalkers"] },
+    { "toHpPct": 33, "cadence": 56, "patterns": ["rootPillars", "boltFan", "pinkRain", "summonWalkers"] },
+    { "toHpPct": 0, "cadence": 44, "patterns": ["rootPillars", "spitArc", "laserSweep", "boltFan", "summonWalkers"] }
   ]
 }

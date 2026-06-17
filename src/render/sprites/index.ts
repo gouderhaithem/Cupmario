@@ -2,7 +2,7 @@
 
 export { rect } from './util';
 export { drawTile, drawCrumble, drawMover } from './tiles';
-export { drawFlyer, drawTurret, drawFoe, drawSpitter } from './enemies';
-export { drawCoin, drawMushroom, drawBolt, drawParryOrb, drawCheckpoint, drawFlag } from './fx';
+export { drawFlyer, drawTurret, drawFoe, drawSpitter, drawMortar, drawBomber, drawCharger } from './enemies';
+export { drawCoin, drawMushroom, drawBolt, drawParryOrb, drawCheckpoint, drawFlag, drawHazard } from './fx';
 export { drawBoss } from './boss';
 export { drawPip } from './player';

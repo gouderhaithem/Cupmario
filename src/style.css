@@ -146,6 +146,12 @@ html, body {
 }
 
 /* ---- Touch controls ---- */
+/* Hidden when the cabinet carries .no-touch-controls (see resolveTouchControls). */
+#cabinet.no-touch-controls #pad-left,
+#cabinet.no-touch-controls #pad-right {
+  display: none;
+}
+
 #pad-left {
   position: absolute;
   left: 16px;

@@ -17,7 +17,7 @@ export const LEVELS: LevelConfig[] = [
   level3 as unknown as LevelConfig,
 ];
 
-// Bosses, in arc order: ROOTKIT → SPECTRA → THE OVERCLOCK (finale).
+// Bosses, in arc order: BARKBROOD (tree) → GRANITE (stone golem) → RIME (ice, finale).
 export const BOSSES: BossConfig[] = [
   boss1 as unknown as BossConfig,
   boss2 as unknown as BossConfig,
@@ -34,11 +34,11 @@ export type Stage = { kind: 'level'; level: number } | { kind: 'boss'; boss: num
  */
 export const CAMPAIGN: Stage[] = [
   { kind: 'level', level: 0 },
-  { kind: 'boss', boss: 0 }, // ROOTKIT
+  { kind: 'boss', boss: 0 }, // BARKBROOD
   { kind: 'level', level: 1 },
-  { kind: 'boss', boss: 1 }, // SPECTRA
+  { kind: 'boss', boss: 1 }, // GRANITE
   { kind: 'level', level: 2 },
-  { kind: 'boss', boss: 2 }, // THE OVERCLOCK (finale)
+  { kind: 'boss', boss: 2 }, // RIME (finale)
 ];
 
 /** Boss Rush (§11.4): every boss back-to-back, no run levels. */

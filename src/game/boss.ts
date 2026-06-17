@@ -11,20 +11,21 @@ import {
   BOSS_DASH_SPEED,
   BOSS_SHAPES,
   BOSS_SKINS,
-  BOSS_DESCEND_SPEED,
   BOSS_EX_DAMAGE,
   BOSS_H,
-  BOSS_HOVER_EASE,
   BOSS_HURT_FLASH,
   BOSS_KO_FRAMES,
   BOSS_TELEGRAPH,
-  BOSS_TRACK,
   BOSS_W,
   FLASH_FRAMES,
   HITSTOP_STOMP,
+  LUMBER_TRACK,
   PALETTE,
   SHAKE_HURT,
   SHAKE_STOMP,
+  STOKE_AMP,
+  STOKE_SPEED,
+  SWAY_SPEED,
   TILE,
 } from './constants';
 import { telegraphFrames } from './difficulty';
@@ -35,16 +36,19 @@ import type { Boss, BossConfig, Level } from '../types';
 
 const KO_POP_LIFE = 60;
 
-/** Build the live boss for an arena, hovering above the floor at center. */
+/** Build the live boss for an arena. Every boss now stands on the floor. */
 export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
-  const homeY = 2 * TILE;
+  const moveMode = cfg.moveMode ?? 'planted';
+  // All bosses are grounded: the box bottom rests on the floor (row 10).
+  const homeY = 10 * TILE - BOSS_H;
+  const homeX = level.worldW / 2 - BOSS_W / 2;
   const skin = BOSS_SKINS[Math.min(index, BOSS_SKINS.length - 1)];
   const shape = BOSS_SHAPES[Math.min(index, BOSS_SHAPES.length - 1)];
   return {
     name: cfg.name,
     skin,
     shape,
-    x: level.worldW / 2 - BOSS_W / 2,
+    x: homeX,
     y: homeY,
     w: BOSS_W,
     h: BOSS_H,
@@ -59,10 +63,16 @@ export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
     pending: null,
     bob: 0,
     homeY,
+    homeX,
     dashPhase: 0,
     dashDir: 1,
     hurtFlash: 0,
     dead: false,
+    moveMode,
+    boltTint: cfg.boltTint,
+    boltTintHi: cfg.boltTintHi,
+    swayT: 0,
+    spiralA: 0,
   };
 }
 
@@ -75,11 +85,14 @@ export function resetBoss(boss: Boss): void {
   boss.patternIdx = 0;
   boss.telegraph = 0;
   boss.pending = null;
+  boss.x = boss.homeX;
   boss.y = boss.homeY;
   boss.dashPhase = 0;
   boss.dashDir = 1;
   boss.hurtFlash = 0;
   boss.dead = false;
+  boss.swayT = 0;
+  boss.spiralA = 0;
 }
 
 /** Apply `dmg` to the boss from an external source (e.g. MEGABLAST). */
@@ -111,39 +124,61 @@ function hurtBoss(state: GameState, dmg: number): void {
   }
 }
 
-/**
- * Move the boss this tick. Hovering, it drifts to track the player (no more
- * "static target"); during a charge dash it descends to the floor, sweeps
- * across, then rises back to its hover height. Returns the inner-arena bounds
- * used to clamp it (left/right of the walls).
- */
-function moveBoss(state: GameState, boss: Boss): void {
-  const left = TILE + 4;
-  const right = state.level.worldW - TILE - boss.w - 4;
-  const floorY = 10 * TILE - boss.h;
-  const p = state.player;
+/** Inner-arena horizontal bounds (just inside the side walls). */
+function arenaBounds(state: GameState, boss: Boss): { left: number; right: number } {
+  return { left: TILE + 4, right: state.level.worldW - TILE - boss.w - 4 };
+}
 
+/** Move the boss this tick, by its move mode (all grounded). */
+function moveBoss(state: GameState, boss: Boss): void {
+  if (boss.moveMode === 'lumber') return moveLumber(state, boss);
+  if (boss.moveMode === 'stoke') return moveStoke(state, boss);
+  movePlanted(state, boss);
+}
+
+/**
+ * BARKBROOD (tree): rooted to its spot. It never chases — only sways (the lean
+ * is purely cosmetic, driven by swayT in the sprite). Pin x/y to home.
+ */
+function movePlanted(_state: GameState, boss: Boss): void {
+  boss.swayT += SWAY_SPEED;
+  boss.x = boss.homeX;
+  boss.y = boss.homeY;
+}
+
+/**
+ * GRANITE (golem): lumbers slowly across the floor toward Pip; when a charge is
+ * armed (chargeDash sets dashPhase=1) it rolls across the arena and stops at the
+ * far wall. Already grounded, so there's no descend/rise — the roll is in-plane.
+ */
+function moveLumber(state: GameState, boss: Boss): void {
+  const { left, right } = arenaBounds(state, boss);
+  const p = state.player;
+  boss.y = boss.homeY;
   if (boss.dashPhase === 0) {
-    // Hover: ease horizontally toward the player and back to hover height.
     const targetX = Math.max(left, Math.min(right, p.x + p.w / 2 - boss.w / 2));
-    boss.x += (targetX - boss.x) * BOSS_TRACK;
-    boss.y += (boss.homeY - boss.y) * BOSS_HOVER_EASE;
+    boss.x += (targetX - boss.x) * LUMBER_TRACK;
   } else if (boss.dashPhase === 1) {
-    // Descend to the floor for the charge.
-    boss.y = Math.min(floorY, boss.y + BOSS_DESCEND_SPEED);
-    if (boss.y >= floorY) boss.dashPhase = 2;
+    boss.dashPhase = 2; // grounded already — begin the roll immediately
+    sfx('dash');
   } else if (boss.dashPhase === 2) {
-    // Dash across; stop at the far wall.
     boss.x += boss.dashDir * BOSS_DASH_SPEED;
     if (boss.x <= left || boss.x >= right) {
       boss.x = Math.max(left, Math.min(right, boss.x));
-      boss.dashPhase = 3;
+      boss.dashPhase = 0;
+      shakeScreen(state, SHAKE_STOMP); // slam into the wall
     }
   } else {
-    // Rise back to hover height, then resume normal scheduling.
-    boss.y = Math.max(boss.homeY, boss.y - BOSS_DESCEND_SPEED);
-    if (boss.y <= boss.homeY) boss.dashPhase = 0;
+    boss.dashPhase = 0;
   }
+}
+
+/** RIME (ice): shuffles side to side around its center on the floor. */
+function moveStoke(state: GameState, boss: Boss): void {
+  const { left, right } = arenaBounds(state, boss);
+  boss.swayT += STOKE_SPEED;
+  boss.x = Math.max(left, Math.min(right, boss.homeX + Math.sin(boss.swayT) * STOKE_AMP));
+  boss.y = boss.homeY;
 }
 
 /**
@@ -201,6 +236,7 @@ export function updateBoss(state: GameState): boolean {
     boss.pending = null;
     boss.attackCd = Math.min(boss.attackCd, 30);
     for (const b of state.projectiles) if (b.from === 'enemy') b.alive = false;
+    state.hazards = []; // clear lingering arena hazards on a phase break
     state.flash = FLASH_FRAMES;
     shakeScreen(state, SHAKE_HURT);
     hitStop(state, HITSTOP_STOMP); // a beat of freeze on the phase break
@@ -208,11 +244,11 @@ export function updateBoss(state: GameState): boolean {
     setBossTempo(170 - boss.phase * 25); // music drives harder each phase
   }
 
-  // Movement: hover-track the player, or run the active charge-dash arc.
+  // Movement: sway / lumber-track / shuffle, or run the active charge-roll.
   moveBoss(state, boss);
 
   // Attack scheduler: count down, telegraph, then fire the pending pattern. It
-  // pauses while a charge dash is in flight (the dash IS the current attack).
+  // pauses while a charge roll is in flight (the roll IS the current attack).
   if (boss.dashPhase === 0) {
     if (boss.telegraph > 0) {
       boss.telegraph -= 1;

@@ -1,6 +1,6 @@
 // All gameplay constants live here (golden rule #3). No magic numbers in logic.
 
-import type { BossShape, BossSkin, Skin } from '../types';
+import type { BoltStyle, BossShape, BossSkin, Skin } from '../types';
 
 // ---- World grid ----
 export const TILE = 45;
@@ -10,6 +10,12 @@ export const ROWS = 12;
 // ---- Viewport (canvas) ----
 export const VIEW_W = 960;
 export const VIEW_H = 540;
+
+// ---- On-screen touch controls ----
+// Default visibility of the on-screen arrow + action buttons for a fresh player
+// (no saved setting yet). Hidden by default; players flip it live in the pause
+// menu (PAUSE → TOUCH CONTROLS: ON/OFF), which persists to localStorage.
+export const SHOW_TOUCH_CONTROLS = false;
 
 // ---- Physics ----
 export const GRAVITY = 0.8;
@@ -155,13 +161,7 @@ export const PINKRAIN_COUNT = 7; // bolts per pinkRain volley
 export const BOSS_MAX_ADDS = 3;
 
 // ---- Boss movement + new patterns (§7) ----
-/** Hover tracking: fraction of the gap to the player closed each tick (slow drift). */
-export const BOSS_TRACK = 0.02;
-/** Ease factor returning the boss to its hover height between attacks. */
-export const BOSS_HOVER_EASE = 0.08;
-/** Vertical speed (px/frame) descending to / rising from the floor for a charge. */
-export const BOSS_DESCEND_SPEED = 6;
-/** Horizontal speed (px/frame) of a charge dash across the arena. */
+/** Horizontal speed (px/frame) of a charge roll across the arena (GRANITE). */
 export const BOSS_DASH_SPEED = 9;
 /** laserSweep beam thickness (px). */
 export const BEAM_H = 22;
@@ -183,6 +183,41 @@ export const TELEPORT_LOW_Y = 5 * TILE;
  * (PLAYER_H − CROUCH_H) also lowers his profile under a sweeping beam.
  */
 export const CROUCH_H = 30;
+
+// ---- Per-boss ground movement (§ boss redesign: all bosses fight grounded) ----
+// GRANITE (lumber): slow ground walk that tracks Pip between charge-rolls.
+/** Fraction of the gap to Pip closed each tick while lumbering (slow stomp). */
+export const LUMBER_TRACK = 0.018;
+// RIME (stoke): shuffles side to side around its center on the floor.
+/** Stoke shuffle angular speed (radians/frame). */
+export const STOKE_SPEED = 0.022;
+/** Stoke shuffle amplitude (px) either side of center. */
+export const STOKE_AMP = 2.2 * TILE;
+/** Idle sway accumulator speed (drives the planted tree's lean + leaf rustle). */
+export const SWAY_SPEED = 0.04;
+// rootPillars: telegraphed columns that erupt from the floor.
+export const PILLAR_WARN = 34;
+export const PILLAR_LIFE = 40;
+export const PILLAR_W = 38;
+/** Tiles tall a root pillar rises from the floor. */
+export const PILLAR_TILES = 4;
+/** Pillars per rootPillars volley. */
+export const PILLAR_COUNT = 4;
+// floorPulse: electrified floor segments that zap after a warning.
+export const SHOCK_WARN = 30;
+export const SHOCK_LIFE = 34;
+/** How tall the electrified floor band stands (px above the floor). */
+export const SHOCK_H = 34;
+/** Arena split into this many segments; alternating ones electrify. */
+export const SHOCK_SEGMENTS = 7;
+// spiralShot: a rotating arm of bolts (THE OVERCLOCK).
+export const SPIRAL_ARMS = 3;
+/** Bolts fired along each arm per cast. */
+export const SPIRAL_BOLTS = 4;
+/** Angle the spiral advances each cast (radians). */
+export const SPIRAL_STEP = 0.5;
+/** Spiral bolt speed (px/frame). */
+export const SPIRAL_SPEED = 3.6;
 
 // ---- Mushroom power-up ----
 export const MUSHROOM_W = 30;
@@ -246,6 +281,41 @@ export const TURRET_COOLDOWN = 110;
 export const TURRET_BURST = 3;
 export const TURRET_SPREAD = 0.28;
 export const TURRET_RANGE = 12 * TILE;
+/** Score bonus for a mortar / charger kill (on top of the base stomp score). */
+export const MORTAR_SCORE = 150;
+export const CHARGER_SCORE = 150;
+
+// ---- Mortar (stationary arc-lobber) ----
+/** Horizontal range (px) within which a mortar lobs at Pip. */
+export const MORTAR_RANGE = 14 * TILE;
+/** Frames between mortar shells. */
+export const MORTAR_COOLDOWN = 120;
+/** Initial upward velocity of a lobbed shell (it then falls under gravity). */
+export const MORTAR_VY = -8.5;
+/** Frames-to-target estimate used to aim the shell's horizontal velocity. */
+export const MORTAR_TRAVEL = 46;
+
+// ---- Bomber (flying bomb-dropper) ----
+/** Frames between bomb drops. */
+export const BOMBER_DROP_CD = 90;
+/** Horizontal window (px) within which a bomber will drop on Pip below it. */
+export const BOMBER_AIM_X = TILE * 1.2;
+/** Initial downward velocity of a dropped bomb (then accelerates via gravity). */
+export const BOMBER_DROP_VY = 1.5;
+
+// ---- Charger (line-of-sight dasher) ----
+/** Slow stalking patrol speed (px/frame). */
+export const CHARGER_PATROL_SPEED = 0.8;
+/** Committed dash speed (px/frame). */
+export const CHARGER_DASH_SPEED = 7.5;
+/** Sight box: horizontal reach + vertical tolerance (px) to trigger a dash. */
+export const CHARGER_SIGHT_X = 10 * TILE;
+export const CHARGER_SIGHT_Y = TILE * 0.8;
+/** Wind-up telegraph (frames) before the dash commits. */
+export const CHARGER_WIND = 28;
+/** Cooldown (frames) back to patrol after a dash ends. */
+export const CHARGER_CD = 70;
+
 /** Stomp-chain combo: score doubles per chained stomp, capped at this many. */
 export const STOMP_COMBO_CAP = 4;
 /** Crumbling platform: frames after contact before it falls, and its fall accel. */
@@ -303,6 +373,24 @@ export const PALETTE = {
   turret: '#7a8290',
   turretDk: '#4a525e',
   turretMuzzle: '#ff7a3c',
+  // Stationary "Mortar": squat iron cannon, hot muzzle, molten arcing shells.
+  mortar: '#6b7280',
+  mortarDk: '#42474f',
+  mortarMuzzle: '#ff8a3c',
+  // Flying "Bomber": steel drone that drops fused iron bombs.
+  bomber: '#5a7d8c',
+  bomberDk: '#39525e',
+  // Dashing "Charger": a hot-orange brute with horns and a glowing wind-up.
+  charger: '#d77a35',
+  chargerDk: '#9a531f',
+  chargerFt: '#5a3216',
+  // New enemy shot tints (non-parryable; parryables stay pink).
+  dart: '#9fe0ff',
+  dartHi: '#ffffff',
+  shell: '#e0563b',
+  shellHi: '#ff9a4c',
+  bomb: '#c2cbd6',
+  bombHi: '#ffd34d',
   // Question / used blocks.
   qblock: '#e0a82e',
   qblockHi: '#ffd34d',
@@ -312,16 +400,40 @@ export const PALETTE = {
   combo: '#ffd34d',
 } as const;
 
+/**
+ * Per-enemy armament (§3 weapons-as-data, for foes). The firing geometry lives
+ * in enemy.ts; this supplies each shot's projectile shape/size/style/tint so
+ * different enemies read as different weapons. `grav` shells arc and die on land.
+ */
+export interface EnemyArm {
+  speed: number;
+  w: number;
+  h: number;
+  style: BoltStyle;
+  tint: string;
+  tintHi: string;
+  grav?: boolean;
+}
+export const ENEMY_ARMS: Record<'shooter' | 'turret' | 'mortar' | 'bomber', EnemyArm> = {
+  shooter: { speed: ENEMY_BOLT_SPEED, w: BOLT_W, h: BOLT_H, style: 'bolt', tint: PALETTE.boltEnemy, tintHi: PALETTE.boltEnemyHi },
+  turret: { speed: 5.6, w: 24, h: 6, style: 'dart', tint: PALETTE.dart, tintHi: PALETTE.dartHi },
+  mortar: { speed: 0, w: 22, h: 22, style: 'lob', tint: PALETTE.shell, tintHi: PALETTE.shellHi, grav: true },
+  bomber: { speed: 0, w: 18, h: 20, style: 'lob', tint: PALETTE.bomb, tintHi: PALETTE.bombHi, grav: true },
+};
+
 // ---- Per-boss looks (index = boss index, see levels.ts BOSSES) ----
 // Each boss gets a distinct color set + silhouette so the fights don't look
-// like reskins. ROOTKIT = earthy purple roots; SPECTRA = electric cyan wire;
-// THE OVERCLOCK = molten-red machine.
+// like reskins. BARKBROOD = bark-brown tree with a leafy crown; GRANITE =
+// grey stone golem veined with molten cracks; RIME = pale-cyan ice crystal.
 export const BOSS_SKINS: BossSkin[] = [
-  { body: '#5d4b8c', bodyDk: '#3a2d5c', bodyLo: '#241a3a', accent: '#7a64b0', eye: '#ff5fb0', crown: '#ffd94a' },
-  { body: '#21c6e6', bodyDk: '#1c6b80', bodyLo: '#0a2e3a', accent: '#d4faff', eye: '#fff35a', crown: '#9ff4ff' },
-  { body: '#c4452f', bodyDk: '#822a1f', bodyLo: '#360f0a', accent: '#ff8a3c', eye: '#7ef0ff', crown: '#ff8a3c' },
+  // BARKBROOD, the Elder Oak: bark browns, amber eyes, mossy-green canopy.
+  { body: '#7a4a24', bodyDk: '#5a3318', bodyLo: '#3a200f', accent: '#9c6a36', eye: '#ffd23c', crown: '#4f9b3a' },
+  // GRANITE, the Stone Warden: cool greys with glowing magma cracks.
+  { body: '#8a8b92', bodyDk: '#5c5d66', bodyLo: '#36373e', accent: '#ff7a2f', eye: '#ffb24a', crown: '#c8d2dc' },
+  // RIME, the Frost Spire: icy cyans + frosty white highlights.
+  { body: '#7fceff', bodyDk: '#3f8fb8', bodyLo: '#1d4a66', accent: '#eafcff', eye: '#bfefff', crown: '#ffffff' },
 ];
-export const BOSS_SHAPES: BossShape[] = ['roots', 'wire', 'machine'];
+export const BOSS_SHAPES: BossShape[] = ['tree', 'rock', 'crystal'];
 
 // ---- Per-level player outfits (index = level index) ----
 // Level 1 = blue explorer; Level 2 = red hair / green shirt / purple pants.

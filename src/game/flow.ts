@@ -2,6 +2,7 @@
 
 import { setMasterVolume, sfx, startBossMusic, startMusic, stopMusic } from '../engine/audio';
 import { shakeScreen } from '../engine/effects';
+import { applyTouchControls } from '../engine/input';
 import {
   BEST_KEY,
   BOSS_INTRO,
@@ -264,6 +265,7 @@ export function enterBoss(state: GameState, bossIndex: number): void {
   state.parryOrbs = [];
   state.mushrooms = [];
   state.projectiles = [];
+  state.hazards = [];
   state.pops = [];
   state.keys = makeKeys();
   state.jumpLatch = false;
@@ -295,6 +297,7 @@ export function bossRetry(state: GameState): void {
   state.player = spawnPlayer(state.level, state.maxHp);
   state.enemies = [];
   state.projectiles = [];
+  state.hazards = [];
   state.mushrooms = [];
   state.pops = [];
   state.keys = makeKeys();
@@ -344,8 +347,8 @@ const CONFIRM_KEYS = new Set([' ', 'Enter']);
 const ADVANCE_KEYS = new Set([' ', 'Enter', 'ArrowRight', 'ArrowUp', 'w', 'W']);
 const PAUSE_KEYS = new Set(['Escape', 'p', 'P']);
 
-/** Pause-menu rows: Resume / Difficulty / Volume / Reduced Motion / Quit. */
-export const PAUSE_ITEMS = 5;
+/** Pause-menu rows: Resume / Difficulty / Volume / Reduced Motion / Touch Controls / Quit. */
+export const PAUSE_ITEMS = 6;
 
 /** Open the stage-select screen (from title / gameover / win). */
 export function openSelect(state: GameState): void {
@@ -391,7 +394,12 @@ export function handleMenuKey(state: GameState, key: string): void {
 
 /** Persist the current option set (difficulty / volume / reduced motion). */
 function persist(state: GameState): void {
-  saveSettings({ difficulty: state.difficulty, volume: state.volume, reducedMotion: state.reducedMotion });
+  saveSettings({
+    difficulty: state.difficulty,
+    volume: state.volume,
+    reducedMotion: state.reducedMotion,
+    showTouchControls: state.showTouchControls,
+  });
 }
 
 /** Cycle difficulty (Expert gated behind a clear); re-derive HP and persist. */
@@ -420,6 +428,13 @@ function toggleReducedMotion(state: GameState): void {
   persist(state);
 }
 
+/** Flip the on-screen touch controls, apply it to the DOM, and persist. */
+function toggleTouchControls(state: GameState): void {
+  state.showTouchControls = !state.showTouchControls;
+  applyTouchControls(state.showTouchControls);
+  persist(state);
+}
+
 /** Navigate + act within the pause menu. */
 function pauseKey(state: GameState, key: string): void {
   if (UP_KEYS.has(key)) {
@@ -431,6 +446,7 @@ function pauseKey(state: GameState, key: string): void {
     if (state.pauseIndex === 1) changeDifficulty(state, dir);
     else if (state.pauseIndex === 2) changeVolume(state, dir * 0.1);
     else if (state.pauseIndex === 3) toggleReducedMotion(state);
+    else if (state.pauseIndex === 4) toggleTouchControls(state);
   } else if (CONFIRM_KEYS.has(key)) {
     if (state.pauseIndex === 0) {
       state.paused = false; // Resume
@@ -439,6 +455,8 @@ function pauseKey(state: GameState, key: string): void {
     } else if (state.pauseIndex === 3) {
       toggleReducedMotion(state);
     } else if (state.pauseIndex === 4) {
+      toggleTouchControls(state);
+    } else if (state.pauseIndex === 5) {
       state.paused = false; // Quit to title
       stopMusic();
       state.screen = 'title';

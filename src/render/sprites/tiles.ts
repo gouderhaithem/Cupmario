@@ -10,32 +10,34 @@ import {
   TILE_USED,
 } from '../../game/constants';
 import { solid } from '../../game/physics';
+import { themeVisual } from '../themes';
 import type { Crumble, Level, MovingPlatform } from '../../types';
 import { rect } from './util';
 
-/** Draw a single solid tile (ground with grass cap, or brick platform). */
+/** Draw a single solid tile (themed ground with cap, or brick/stone platform). */
 export function drawTile(ctx: CanvasRenderingContext2D, level: Level, c: number, r: number): void {
   const t = level.grid[r][c];
+  const skin = themeVisual(level.theme).tiles;
   if (t === TILE_GROUND) {
     const x = c * TILE;
     const y = r * TILE;
     const topOpen = !solid(level, c, r - 1);
-    rect(ctx, x, y, TILE, TILE, '#7a4a26');
-    rect(ctx, x, y, TILE, TILE * 0.18, '#8a5a30');
+    rect(ctx, x, y, TILE, TILE, skin.groundBase);
+    rect(ctx, x, y, TILE, TILE * 0.18, skin.groundBand);
     if (topOpen) {
-      rect(ctx, x, y, TILE, 12, '#58d68a');
-      rect(ctx, x, y + 10, TILE, 4, '#3f9a5e');
+      rect(ctx, x, y, TILE, 12, skin.capHi);
+      rect(ctx, x, y + 10, TILE, 4, skin.capLo);
     }
     rect(ctx, x, y, 3, TILE, 'rgba(0,0,0,0.12)');
     rect(ctx, x + TILE - 3, y, 3, TILE, 'rgba(0,0,0,0.18)');
   } else if (t === TILE_BRICK) {
     const x = c * TILE;
     const y = r * TILE;
-    rect(ctx, x, y, TILE, TILE, '#d98a3a');
-    rect(ctx, x + 3, y + 3, TILE - 6, TILE - 6, '#e8a657');
-    rect(ctx, x + 3, y + 3, TILE - 6, 5, '#f2c486');
-    rect(ctx, x, y, TILE, 4, '#b06a26');
-    rect(ctx, x, y + TILE - 4, TILE, 4, '#b06a26');
+    rect(ctx, x, y, TILE, TILE, skin.brickBase);
+    rect(ctx, x + 3, y + 3, TILE - 6, TILE - 6, skin.brickFace);
+    rect(ctx, x + 3, y + 3, TILE - 6, 5, skin.brickFaceHi);
+    rect(ctx, x, y, TILE, 4, skin.brickEdge);
+    rect(ctx, x, y + TILE - 4, TILE, 4, skin.brickEdge);
   } else if (t === TILE_QBLOCK || t === TILE_POWBLOCK) {
     drawQBlock(ctx, c, r, t === TILE_POWBLOCK);
   } else if (t === TILE_USED) {

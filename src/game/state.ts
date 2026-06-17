@@ -1,7 +1,7 @@
 // The single GameState object. All systems read/write through it; render.ts
 // only reads. Per-frame mutation here is intentional (see CLAUDE.md rules 4-5).
 
-import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Projectile, Screen, WeaponId } from '../types';
+import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Projectile, Screen, WeaponId } from '../types';
 import { ASSIST_BONUS_HP, BEST_KEY, LEVEL_TIME, MAX_HP, PLAYER_H, PLAYER_W, START_LIVES } from './constants';
 import { buildLevel, spawnCheckpoints, spawnCrumbles, spawnEnemies, spawnMovers, spawnOrbs } from './level';
 import { LEVELS } from './levels';
@@ -62,6 +62,8 @@ export interface GameState {
   shootCd: number;
   /** Latch so holding the dash key fires only one dash per press. */
   dashLatch: boolean;
+  /** One-shot dash request from a left/right double-tap; consumed each tick. */
+  dashTap: boolean;
   /** Super meter cards (0..SUPER_MAX). Parries fill it; EX/MEGABLAST spend it. */
   superCards: number;
   /** Latch so holding the super key fires only one EX/MEGABLAST per press. */
@@ -72,6 +74,8 @@ export interface GameState {
   flash: number;
   /** The live boss during a 'boss' fight, or null on run levels. */
   boss: Boss | null;
+  /** Timed arena hazards (root pillars / electrified floor) during a boss fight. */
+  hazards: Hazard[];
   /** KO death-wobble countdown after the boss falls; 0 → show the win screen. */
   bossKo: number;
 
@@ -122,6 +126,8 @@ export interface GameState {
   volume: number;
   /** Reduced motion: suppress screen shake + the film-grain/vignette. Persisted. */
   reducedMotion: boolean;
+  /** Show the on-screen touch arrows + action buttons. Persisted. */
+  showTouchControls: boolean;
   /** Gameplay is frozen behind the pause menu. */
   paused: boolean;
   /** Highlighted entry in the pause menu. */
@@ -202,11 +208,13 @@ export function createState(): GameState {
     shootLatch: false,
     shootCd: 0,
     dashLatch: false,
+    dashTap: false,
     superCards: 0,
     superLatch: false,
     parryLatch: false,
     flash: 0,
     boss: null,
+    hazards: [],
     bossKo: 0,
     weapons: ['peashot'],
     weaponIdx: 0,
@@ -229,6 +237,7 @@ export function createState(): GameState {
     maxHp: MAX_HP + (settings.difficulty === 'assist' ? ASSIST_BONUS_HP : 0),
     volume: settings.volume,
     reducedMotion: settings.reducedMotion,
+    showTouchControls: settings.showTouchControls,
     paused: false,
     pauseIndex: 0,
     aimX: 0,
@@ -261,11 +270,13 @@ export function loadLevel(state: GameState, levelIndex: number): void {
   state.shootLatch = false;
   state.shootCd = 0;
   state.dashLatch = false;
+  state.dashTap = false;
   state.superCards = 0;
   state.superLatch = false;
   state.parryLatch = false;
   state.flash = 0;
   state.boss = null;
+  state.hazards = [];
   state.bossKo = 0;
   state.camX = 0;
   // Transient per-life/per-level resets (weapons persist; handled in flow.ts).

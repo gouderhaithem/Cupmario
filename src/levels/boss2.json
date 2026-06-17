@@ -1,7 +1,7 @@
 {
   "kind": "boss",
   "theme": "night",
-  "name": "SPECTRA, THE LIVE WIRE",
+  "name": "GRANITE, THE STONE WARDEN",
   "hp": 44,
   "arenaCols": 21,
   "floorPlats": [
@@ -11,10 +11,13 @@
     [6, 12, 3],
     [8, 16, 3]
   ],
+  "moveMode": "lumber",
+  "boltTint": "#bfae93",
+  "boltTintHi": "#f2e6cf",
   "phases": [
-    { "toHpPct": 70, "cadence": 54, "patterns": ["teleport", "ringBurst", "boltFan"] },
-    { "toHpPct": 45, "cadence": 44, "patterns": ["teleport", "laserSweep", "sparkNova"] },
-    { "toHpPct": 20, "cadence": 36, "patterns": ["teleport", "sparkNova", "pinkRain", "laserSweep"] },
-    { "toHpPct": 0, "cadence": 28, "patterns": ["sparkNova", "laserSweep", "ringBurst", "pinkRain", "teleport"] }
+    { "toHpPct": 70, "cadence": 64, "patterns": ["spitArc", "groundPound", "chargeDash"] },
+    { "toHpPct": 45, "cadence": 54, "patterns": ["groundPound", "ringBurst", "chargeDash", "boltFan"] },
+    { "toHpPct": 20, "cadence": 46, "patterns": ["chargeDash", "groundPound", "rootPillars", "ringBurst"] },
+    { "toHpPct": 0, "cadence": 36, "patterns": ["chargeDash", "groundPound", "ringBurst", "boltFan", "spitArc"] }
   ]
 }

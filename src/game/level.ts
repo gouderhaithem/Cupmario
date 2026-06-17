@@ -14,6 +14,7 @@ import type {
   ParryOrb,
 } from '../types';
 import {
+  CHARGER_PATROL_SPEED,
   COLS,
   FLYER_SPEED,
   ORB_SIZE,
@@ -36,11 +37,17 @@ const PATROL_COLS = 3;
 const FLYER_PATROL_COLS = 5;
 const FLYER_ROW = 5;
 
-/** Build one ground-standing enemy (walker/shooter/turret) on column `c`. */
+/** Build one ground-standing enemy (walker/shooter/turret/mortar/charger) on column `c`. */
 function makeEnemy(c: number, kind: EnemyKind): Enemy {
-  const speed =
-    kind === 'shooter' ? ENEMY_SPEED * SHOOTER_SPEED_MULT : kind === 'turret' ? 0 : ENEMY_SPEED;
-  const patrol = kind === 'turret' ? 0 : PATROL_COLS;
+  const stationary = kind === 'turret' || kind === 'mortar';
+  const speed = stationary
+    ? 0
+    : kind === 'shooter'
+      ? ENEMY_SPEED * SHOOTER_SPEED_MULT
+      : kind === 'charger'
+        ? CHARGER_PATROL_SPEED
+        : ENEMY_SPEED;
+  const patrol = stationary ? 0 : PATROL_COLS;
   return {
     x: c * TILE,
     y: 10 * TILE - ENEMY_H,
@@ -53,11 +60,12 @@ function makeEnemy(c: number, kind: EnemyKind): Enemy {
     kind,
     shootCd: 0,
     shotCount: 0,
+    ...(kind === 'charger' ? { chargeState: 'patrol' as const, windT: 0 } : {}),
   };
 }
 
-/** Build a sine-wave flying "Drone" cruising at mid-air height on column `c`. */
-function makeFlyer(c: number): Enemy {
+/** Build a sine-wave flyer ("Drone" or bomb-dropping "Bomber") on column `c`. */
+function makeFlyer(c: number, kind: 'flyer' | 'bomber'): Enemy {
   const baseY = FLYER_ROW * TILE;
   return {
     x: c * TILE,
@@ -68,7 +76,7 @@ function makeFlyer(c: number): Enemy {
     alive: true,
     minX: (c - FLYER_PATROL_COLS) * TILE,
     maxX: (c + FLYER_PATROL_COLS) * TILE,
-    kind: 'flyer',
+    kind,
     shootCd: 0,
     shotCount: 0,
     baseY,
@@ -160,7 +168,10 @@ export function buildLevel(cfg: LevelConfig): Level {
     ...cfg.enemyCols.filter((c) => !isPit(c)).map((c) => makeEnemy(c, 'walker')),
     ...(cfg.shooterCols ?? []).filter((c) => !isPit(c)).map((c) => makeEnemy(c, 'shooter')),
     ...(cfg.turretCols ?? []).filter((c) => !isPit(c)).map((c) => makeEnemy(c, 'turret')),
-    ...(cfg.flyerCols ?? []).map((c) => makeFlyer(c)),
+    ...(cfg.mortarCols ?? []).filter((c) => !isPit(c)).map((c) => makeEnemy(c, 'mortar')),
+    ...(cfg.chargerCols ?? []).filter((c) => !isPit(c)).map((c) => makeEnemy(c, 'charger')),
+    ...(cfg.flyerCols ?? []).map((c) => makeFlyer(c, 'flyer')),
+    ...(cfg.bomberCols ?? []).map((c) => makeFlyer(c, 'bomber')),
   ];
 
   return {

@@ -4,6 +4,12 @@
 import { initAudio } from './audio';
 import type { GameState } from '../game/state';
 
+/** Show or hide the touch pads by toggling a class on the cabinet. */
+export function applyTouchControls(visible: boolean): void {
+  const cabinet = document.getElementById('cabinet');
+  cabinet?.classList.toggle('no-touch-controls', !visible);
+}
+
 const PREVENT = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ']);
 const LEFT = new Set(['ArrowLeft', 'a', 'A']);
 const RIGHT = new Set(['ArrowRight', 'd', 'D']);
@@ -16,6 +22,24 @@ const LOCK = new Set(['k', 'K']);
 const SUPER = new Set(['j', 'J']);
 const SWITCH = new Set(['q', 'Q', 'e', 'E']);
 const PAUSE = new Set(['Escape', 'p', 'P']);
+
+// Double-tap-to-dash: a second tap of the same direction within this window
+// requests a dash (consumed by updateDash, which fires it toward p.face).
+const DOUBLE_TAP_MS = 280;
+let lastTapDir = 0; // -1 left, 1 right, 0 none
+let lastTapTime = -Infinity;
+
+/** Record a fresh left/right tap; a quick repeat of the same side fires a dash. */
+function tapDirection(state: GameState, dir: -1 | 1): void {
+  const now = performance.now();
+  if (dir === lastTapDir && now - lastTapTime <= DOUBLE_TAP_MS) {
+    state.dashTap = true;
+    lastTapTime = -Infinity; // consume, so a third tap needs a new pair
+  } else {
+    lastTapDir = dir;
+    lastTapTime = now;
+  }
+}
 
 /**
  * Wire input. `onMenuKey(key)` handles any key on a non-gameplay screen
@@ -46,8 +70,14 @@ export function setupInput(state: GameState, onMenuKey: (key: string) => void): 
       onMenuKey(k);
       return;
     }
-    if (LEFT.has(k)) state.keys.left = true;
-    if (RIGHT.has(k)) state.keys.right = true;
+    if (LEFT.has(k)) {
+      state.keys.left = true;
+      if (!e.repeat) tapDirection(state, -1);
+    }
+    if (RIGHT.has(k)) {
+      state.keys.right = true;
+      if (!e.repeat) tapDirection(state, 1);
+    }
     if (UP.has(k)) state.keys.up = true;
     if (DOWN.has(k)) state.keys.down = true;
     if (JUMP.has(k)) state.keys.jump = true;
@@ -88,8 +118,22 @@ export function setupInput(state: GameState, onMenuKey: (key: string) => void): 
   });
 
   // ---- Touch buttons ----
-  bindHold('btn-left', () => (state.keys.left = true), () => (state.keys.left = false));
-  bindHold('btn-right', () => (state.keys.right = true), () => (state.keys.right = false));
+  bindHold(
+    'btn-left',
+    () => {
+      state.keys.left = true;
+      tapDirection(state, -1);
+    },
+    () => (state.keys.left = false),
+  );
+  bindHold(
+    'btn-right',
+    () => {
+      state.keys.right = true;
+      tapDirection(state, 1);
+    },
+    () => (state.keys.right = false),
+  );
   bindHold('btn-down', () => (state.keys.down = true), () => (state.keys.down = false));
   bindHold(
     'btn-jump',

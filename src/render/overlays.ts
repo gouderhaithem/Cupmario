@@ -27,6 +27,7 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
     `DIFFICULTY:  ${difficultyLabel(state.difficulty)}`,
     `VOLUME:  ${'█'.repeat(Math.round(state.volume * 10))}${'·'.repeat(10 - Math.round(state.volume * 10))}`,
     `REDUCED MOTION:  ${state.reducedMotion ? 'ON' : 'OFF'}`,
+    `TOUCH CONTROLS:  ${state.showTouchControls ? 'ON' : 'OFF'}`,
     'QUIT TO TITLE',
   ];
   ctx.font = "14px 'Press Start 2P', monospace";

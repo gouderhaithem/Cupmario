@@ -2,7 +2,7 @@
 // persisted to localStorage so they survive reloads. Pure storage helpers —
 // applying them lives in flow.
 
-import { BEST_KEY } from './constants';
+import { BEST_KEY, SHOW_TOUCH_CONTROLS } from './constants';
 import type { Difficulty } from '../types';
 
 export interface Settings {
@@ -12,12 +12,15 @@ export interface Settings {
   volume: number;
   /** Reduced motion: suppress screen shake + the film-grain/vignette filter. */
   reducedMotion: boolean;
+  /** Show the on-screen touch arrows + action buttons. */
+  showTouchControls: boolean;
 }
 
 const ASSIST_KEY = `${BEST_KEY}-assist`; // legacy boolean, migrated to difficulty
 const DIFFICULTY_KEY = `${BEST_KEY}-difficulty`;
 const VOLUME_KEY = `${BEST_KEY}-volume`;
 const REDUCED_MOTION_KEY = `${BEST_KEY}-reduced-motion`;
+const TOUCH_CONTROLS_KEY = `${BEST_KEY}-touch-controls`;
 
 const DIFFICULTIES: readonly Difficulty[] = ['assist', 'normal', 'expert'];
 
@@ -29,6 +32,7 @@ export function loadSettings(): Settings {
   let difficulty: Difficulty = 'normal';
   let volume = 0.5;
   let reducedMotion = false;
+  let showTouchControls = SHOW_TOUCH_CONTROLS;
   try {
     const stored = localStorage.getItem(DIFFICULTY_KEY);
     if (isDifficulty(stored)) {
@@ -39,10 +43,12 @@ export function loadSettings(): Settings {
     const v = parseFloat(localStorage.getItem(VOLUME_KEY) ?? '');
     if (!Number.isNaN(v)) volume = Math.min(1, Math.max(0, v));
     reducedMotion = localStorage.getItem(REDUCED_MOTION_KEY) === '1';
+    const t = localStorage.getItem(TOUCH_CONTROLS_KEY);
+    if (t !== null) showTouchControls = t === '1'; // unset → keep the constant default
   } catch {
     /* ignore storage errors */
   }
-  return { difficulty, volume, reducedMotion };
+  return { difficulty, volume, reducedMotion, showTouchControls };
 }
 
 export function saveSettings(s: Settings): void {
@@ -50,6 +56,7 @@ export function saveSettings(s: Settings): void {
     localStorage.setItem(DIFFICULTY_KEY, s.difficulty);
     localStorage.setItem(VOLUME_KEY, String(s.volume));
     localStorage.setItem(REDUCED_MOTION_KEY, s.reducedMotion ? '1' : '0');
+    localStorage.setItem(TOUCH_CONTROLS_KEY, s.showTouchControls ? '1' : '0');
   } catch {
     /* ignore storage errors */
   }

@@ -13,7 +13,13 @@ export type GameMode = 'campaign' | 'bossrush';
  */
 export type Difficulty = 'assist' | 'normal' | 'expert';
 
-export type Theme = 'day' | 'night';
+// Biome themes. Each drives a distinct background (sky/backdrop/celestial) and
+// tile palette via THEMES in render/themes.ts — so levels stop looking alike.
+//   day     — bright meadow (level 1 intro)
+//   night   — moonlit hills (boss arenas)
+//   cavern  — underground: dark sky, crystals, stone tiles (level 2)
+//   foundry — industrial: smoggy sky, girders, metal grating (level 3)
+export type Theme = 'day' | 'night' | 'cavern' | 'foundry';
 
 /** Player outfit colors, chosen by level index from the SKINS array. */
 export interface Skin {
@@ -44,6 +50,12 @@ export interface LevelConfig {
   flyerCols?: number[];
   /** Columns to spawn a stationary "Turret" on. Optional. */
   turretCols?: number[];
+  /** Columns to spawn a stationary "Mortar" (lobs arcing shells) on. Optional. */
+  mortarCols?: number[];
+  /** Columns to spawn a flying "Bomber" (drops gravity bombs) on. Optional. */
+  bomberCols?: number[];
+  /** Columns to spawn a dashing "Charger" on. Optional. */
+  chargerCols?: number[];
   /** Coin question-blocks: [col, row]. Bump from below for a coin. */
   qblocks?: Array<[number, number]>;
   /** Weapon question-blocks: [col, row]. Bump from below for a power mushroom. */
@@ -121,7 +133,24 @@ export interface MovingPlatform {
  * (shooter), a sine-wave "Drone" (flyer), or a stationary "Turret" that fires
  * aimed bursts.
  */
-export type EnemyKind = 'walker' | 'shooter' | 'flyer' | 'turret';
+// walker  — ground patrol, melee only
+// shooter — ground patrol, fires a straight bolt ("Spitter")
+// flyer   — harmless sine-path "Drone"
+// turret  — stationary, aimed dart burst
+// mortar  — stationary, lobs a high arcing shell (dodge by position)
+// bomber  — sine-path flyer that drops gravity bombs from overhead
+// charger — slow patrol, then dashes when it spots Pip on its level
+export type EnemyKind =
+  | 'walker'
+  | 'shooter'
+  | 'flyer'
+  | 'turret'
+  | 'mortar'
+  | 'bomber'
+  | 'charger';
+
+/** Charger state machine: stalk → wind-up tell → committed dash. */
+export type ChargeState = 'patrol' | 'wind' | 'dash';
 
 export interface Enemy {
   x: number;
@@ -134,14 +163,18 @@ export interface Enemy {
   maxX: number;
   /** Behavior type. */
   kind: EnemyKind;
-  /** Frames until a shooter/turret may fire again (0 for walkers/flyers). */
+  /** Frames until a shooter/turret/mortar/bomber may fire again. */
   shootCd: number;
   /** Count of bolts fired, used to make every Nth shot pink (parryable). */
   shotCount: number;
-  /** Flyer: rest height the sine path oscillates around. */
+  /** Flyer/bomber: rest height the sine path oscillates around. */
   baseY?: number;
-  /** Flyer: sine-path phase accumulator. */
+  /** Flyer/bomber: sine-path phase accumulator. */
   bob?: number;
+  /** Charger: current phase of its stalk/dash cycle. */
+  chargeState?: ChargeState;
+  /** Charger: wind-up countdown (the telegraph before a dash). */
+  windT?: number;
 }
 
 /** A platform that falls a short delay after the player stands on it (§8). */
@@ -194,6 +227,15 @@ export interface Mushroom {
 }
 
 /** A bolt in flight. Player bolts kill enemies; enemy bolts hurt Pip. */
+/**
+ * Visual identity of a shot, so different enemies read as different weapons:
+ *   bolt  — round energy capsule (default; Spitter)
+ *   dart  — thin fast tracer drawn along its velocity (Turret)
+ *   lob   — heavy round shell/bomb with an outline (Mortar / Bomber, `grav`)
+ *   spark — jagged star burst
+ */
+export type BoltStyle = 'bolt' | 'dart' | 'lob' | 'spark';
+
 export interface Projectile {
   x: number;
   y: number;
@@ -204,6 +246,11 @@ export interface Projectile {
   alive: boolean;
   /** Who fired it — decides what it can hit. */
   from: 'player' | 'enemy';
+  /** Visual style (defaults to 'bolt' when absent). */
+  style?: BoltStyle;
+  /** Per-shot color override for non-parryable enemy fire (core + highlight). */
+  tint?: string;
+  tintHi?: string;
   /** Pink enemy bolt: can be parried (jump-press on contact). */
   parryable?: boolean;
   /** Player EX/Super bolt: passes through enemies instead of dying on hit. */
@@ -323,7 +370,35 @@ export type PatternName =
   | 'chargeDash'
   | 'teleport'
   | 'ringBurst'
-  | 'sparkNova';
+  | 'sparkNova'
+  // Per-boss signature gimmicks (§ boss redesign):
+  | 'rootPillars' // BARKBROOD / RIME: telegraphed ground eruptions (roots / frost spikes)
+  | 'floorPulse' // electrified/hazard floor segments (reusable library pattern)
+  | 'spiralShot'; // a rotating arm of bolts (reusable library pattern)
+
+/**
+ * How a grounded boss moves on the arena floor:
+ *   planted — rooted to one spot, only sways (BARKBROOD, the tree).
+ *   lumber  — slow ground walk that tracks Pip, then charge-rolls across (GRANITE, the golem).
+ *   stoke   — shuffles side to side around its center (RIME, the ice spire).
+ */
+export type BossMoveMode = 'planted' | 'lumber' | 'stoke';
+
+/**
+ * A timed arena hazard during a boss fight (root pillars / electrified floor).
+ * Harmless while telegraphing (`warn` > 0), lethal once it erupts (`life` > 0).
+ */
+export interface Hazard {
+  kind: 'pillar' | 'shock';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Telegraph frames; harmless and shown as a warning while > 0. */
+  warn: number;
+  /** Lethal lifetime in frames once it erupts; expires at 0. */
+  life: number;
+}
 
 /** One stage of a boss fight: gets faster and nastier as HP drops. */
 export interface BossPhase {
@@ -335,8 +410,8 @@ export interface BossPhase {
   patterns: PatternName[];
 }
 
-/** Visual silhouette for a boss (drives appendages + headpiece in the sprite). */
-export type BossShape = 'roots' | 'wire' | 'machine';
+/** Visual silhouette for a boss (drives the whole body in the sprite). */
+export type BossShape = 'tree' | 'rock' | 'crystal';
 
 /** Per-boss color set so each fight looks distinct (chosen by boss index). */
 export interface BossSkin {
@@ -365,6 +440,11 @@ export interface BossConfig {
   /** Floating brick platforms in the arena: [row, startCol, length]. */
   floorPlats: Array<[number, number, number]>;
   phases: BossPhase[];
+  /** Movement style (defaults to 'hover'). Each boss feels distinct. */
+  moveMode?: BossMoveMode;
+  /** Per-boss bolt color so each fight's fire reads as that character. */
+  boltTint?: string;
+  boltTintHi?: string;
 }
 
 /** The live boss during a fight. */
@@ -394,8 +474,10 @@ export interface Boss {
   pending: PatternName | null;
   /** Hover bob accumulator (drives the idle float). */
   bob: number;
-  /** Resting hover height the boss eases back to between attacks. */
+  /** Resting floor height (box top) the boss stands at. */
   homeY: number;
+  /** Resting center X a planted/stoke boss orbits around. */
+  homeX: number;
   /**
    * chargeDash choreography: 0 = hovering (tracks the player), 1 = descending
    * to the floor, 2 = dashing across, 3 = rising back to hover height.
@@ -407,4 +489,13 @@ export interface Boss {
   hurtFlash: number;
   /** True once HP hits 0 (KO sequence playing). */
   dead: boolean;
+  /** Movement style this fight (planted / lumber / stoke). */
+  moveMode: BossMoveMode;
+  /** Per-boss bolt color (passed onto fired bolts). */
+  boltTint?: string;
+  boltTintHi?: string;
+  /** Sway / stoke accumulator (drives idle sway and the stoke shuffle). */
+  swayT: number;
+  /** Rotating-arm angle accumulator (spiralShot). */
+  spiralA: number;
 }

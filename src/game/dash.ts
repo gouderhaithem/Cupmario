@@ -13,20 +13,22 @@ export function updateDash(state: GameState): void {
 
   if (p.dashCd > 0) p.dashCd -= 1;
 
-  // Start a dash on a fresh press (rising edge) when off cooldown and idle.
-  if (keys.dash && !state.dashLatch) {
-    state.dashLatch = true;
-    if (p.dashFrames <= 0 && p.dashCd <= 0) {
-      p.dashFrames = DASH_FRAMES;
-      p.dashDir = p.face;
-      p.dashCd = DASH_CD;
-      // Grant i-frames via the shared invulnerability counter (collisions test
-      // `hurt <= 0`), so a dash punches through bolts and enemies cleanly.
-      p.hurt = Math.max(p.hurt, DASH_IFRAMES);
-      sfx('dash');
-    }
-  } else if (!keys.dash) {
-    state.dashLatch = false;
+  // A dash fires on a fresh dash-key press (rising edge) or a left/right
+  // double-tap pulse. Track the key latch independently so holding the key
+  // still yields one dash, and consume the one-shot tap request each tick.
+  const keyPress = keys.dash && !state.dashLatch;
+  state.dashLatch = keys.dash;
+  const tapPress = state.dashTap;
+  state.dashTap = false;
+
+  if ((keyPress || tapPress) && p.dashFrames <= 0 && p.dashCd <= 0) {
+    p.dashFrames = DASH_FRAMES;
+    p.dashDir = p.face;
+    p.dashCd = DASH_CD;
+    // Grant i-frames via the shared invulnerability counter (collisions test
+    // `hurt <= 0`), so a dash punches through bolts and enemies cleanly.
+    p.hurt = Math.max(p.hurt, DASH_IFRAMES);
+    sfx('dash');
   }
 
   // While dashing, pin horizontal velocity to the burst direction.

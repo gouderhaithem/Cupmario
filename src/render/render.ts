@@ -14,13 +14,17 @@ import {
 } from './overlays';
 import {
   drawBolt,
+  drawBomber,
   drawBoss,
+  drawCharger,
   drawCheckpoint,
   drawCoin,
   drawCrumble,
   drawFlag,
   drawFlyer,
   drawFoe,
+  drawHazard,
+  drawMortar,
   drawMover,
   drawMushroom,
   drawParryOrb,
@@ -104,9 +108,15 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     if (!e.alive) continue;
     if (e.kind === 'shooter') drawSpitter(ctx, e, frame);
     else if (e.kind === 'flyer') drawFlyer(ctx, e, frame);
+    else if (e.kind === 'bomber') drawBomber(ctx, e, frame);
     else if (e.kind === 'turret') drawTurret(ctx, e);
+    else if (e.kind === 'mortar') drawMortar(ctx, e);
+    else if (e.kind === 'charger') drawCharger(ctx, e, frame);
     else drawFoe(ctx, e, frame);
   }
+
+  // Arena hazards (root pillars / electrified floor) sit on the world layer.
+  for (const hz of state.hazards) drawHazard(ctx, hz, frame);
 
   // The boss looms in the arena (behind bolts + player).
   if (state.boss) drawBoss(ctx, state.boss, frame);
