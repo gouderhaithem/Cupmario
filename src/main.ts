@@ -20,6 +20,7 @@ import { updateMushrooms } from './game/mushroom';
 import { updateOrbs } from './game/orbs';
 import { tryParry } from './game/parry';
 import { updatePlayer } from './game/player';
+import { updatePuffs } from './game/puff';
 import { updateProjectiles } from './game/projectile';
 import { updateSuper } from './game/super';
 import { createState } from './game/state';
@@ -89,6 +90,7 @@ function main(): void {
       if (po.life <= 0) state.pops.splice(i, 1);
     }
 
+    updatePuffs(state); // advance + fade dust clouds
     updateCamera(state); // clamps to 0 in the tight arena
   };
 
@@ -147,12 +149,16 @@ function main(): void {
       if (po.life <= 0) state.pops.splice(i, 1);
     }
 
+    updatePuffs(state); // advance + fade dust clouds
     updateCamera(state);
   };
 
   // ---- Render (per animation frame): animation clock, world, HUD ----
   const render = (): void => {
     state.frame++;
+    // Age the cosmetic film-burn here (not in draw, which stays read-only) so it
+    // animates even on the frozen gameover screen.
+    if (state.burn > 0) state.burn--;
     pollGamepad(state, (key) => handleMenuKey(state, key));
     draw(ctx, state);
     updateHud(state);

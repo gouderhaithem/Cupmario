@@ -3,19 +3,91 @@
 // All read state and paint — no mutation. Kept out of render.ts so the per-frame
 // world draw path stays lean.
 
-import { BOSS_INTRO, BOSS_KO_FRAMES, PALETTE, VIEW_H, VIEW_W } from '../game/constants';
+import { BOSS_INTRO, BOSS_KO_FRAMES, BURN_FRAMES, IRIS_FRAMES, PALETTE, VIEW_H, VIEW_W } from '../game/constants';
 import { difficultyLabel } from '../game/difficulty';
 import { fmtTime } from '../game/grade';
 import { loadProgress } from '../game/flow';
 import { buildSelectEntries, entryGrade, entryTime } from '../game/select';
 import type { GameState } from '../game/state';
-import type { Boss } from '../types';
+import type { Boss, Screen } from '../types';
+
+// ---- Hand-drawn deco chrome (shared by the canvas overlays) ----
+
+const DECO_GOLD = '#ffd94a';
+const DECO_INK = '#11112a';
+
+/**
+ * A vintage art-deco frame: an ink keyline, a gold double-rule, and a little
+ * diamond stud at each corner. Used to frame the canvas cards/panels.
+ */
+function decoFrame(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+  ctx.save();
+  ctx.lineJoin = 'miter';
+  ctx.strokeStyle = DECO_INK;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(x, y, w, h);
+  ctx.strokeStyle = DECO_GOLD;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
+  for (const [dx, dy] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]] as const) {
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillStyle = DECO_GOLD;
+    ctx.fillRect(-6, -6, 12, 12);
+    ctx.fillStyle = DECO_INK;
+    ctx.fillRect(-2.5, -2.5, 5, 5);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/** A filled deco panel (aged paper) with the gold frame on top. */
+function decoPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, fill = 'rgba(17,17,42,0.92)'): void {
+  ctx.save();
+  ctx.fillStyle = fill;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  decoFrame(ctx, x, y, w, h);
+}
+
+/**
+ * A rotating two-tone comic starburst (alternating long/short spikes) — the
+ * classic "POW!" backing for the KO card. `spin` drives the slow rotation.
+ */
+function starburst(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, spin: number): void {
+  const spikes = 18;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(spin);
+  const ring = (rOuter: number, rInner: number, color: string, twist: number): void => {
+    ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+      const ang = (i / (spikes * 2)) * Math.PI * 2 + twist;
+      const rr = i % 2 === 0 ? rOuter : rInner;
+      ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  };
+  ring(R, R * 0.6, '#ff7a3c', 0);
+  ring(R * 0.78, R * 0.46, DECO_GOLD, 0.09);
+  ctx.restore();
+}
 
 /** Pause menu: dim the world, then Resume / Assist / Volume / Quit rows. */
 export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.save();
   ctx.fillStyle = 'rgba(8,6,18,0.78)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  // Framed deco panel behind the menu rows.
+  const pw = 660;
+  const ph = 420;
+  decoPanel(ctx, (VIEW_W - pw) / 2, 96, pw, ph);
 
   ctx.textAlign = 'center';
   ctx.font = "26px 'Press Start 2P', monospace";
@@ -104,10 +176,28 @@ export function drawCleanGrade(ctx: CanvasRenderingContext2D): void {
   ctx.restore();
 }
 
+/**
+ * Sub-pixel "gate weave" — the slow drift of film through a projector gate. Fed
+ * into the world translate (alongside screen shake) so the action sways a hair
+ * while the sky stays put (no edge gap). Zero amplitude, basically — it just
+ * stops the frame feeling pinned to the pixel grid.
+ */
+export function gateWeave(frame: number): { dx: number; dy: number } {
+  return {
+    dx: Math.sin(frame * 0.05) * 0.6 + Math.sin(frame * 0.017) * 0.3,
+    dy: Math.cos(frame * 0.043) * 0.5,
+  };
+}
+
 // Cached vignette gradient (depends only on the fixed viewport size).
 let vignette: CanvasGradient | null = null;
 
-/** Subtle dark-edge vignette + sparse film grain for a vintage cartoon look. */
+/**
+ * Vintage film FX layered over the frame: a dark-edge vignette, sparse grain, an
+ * occasional vertical scratch hairline, and a periodic reel-change "cigarette
+ * burn" in the upper-right. The scratch/burn placements step on slow frame
+ * cycles (not every frame) so they read as real film wear, not noise.
+ */
 export function drawVintage(ctx: CanvasRenderingContext2D, frame: number): void {
   if (!vignette) {
     vignette = ctx.createRadialGradient(
@@ -124,11 +214,41 @@ export function drawVintage(ctx: CanvasRenderingContext2D, frame: number): void 
   ctx.save();
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
   // Sparse grain: a handful of faint specks, reseeded each frame.
   ctx.globalAlpha = 0.05;
   ctx.fillStyle = frame % 2 ? '#ffffff' : '#000000';
   for (let i = 0; i < 70; i++) {
     ctx.fillRect((Math.random() * VIEW_W) | 0, (Math.random() * VIEW_H) | 0, 2, 2);
+  }
+
+  // Vertical scratch: a bright hairline that holds an x for a few frames, then
+  // jumps. The phase seeds a stable pseudo-random x so it doesn't shimmer.
+  const sp = Math.floor(frame / 26);
+  if (frame % 26 < 16 && sp % 3 !== 0) {
+    const hx = ((sp * 9301 + 49297) % 233280) / 233280;
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = '#fff8e8';
+    ctx.fillRect((hx * VIEW_W) | 0, 0, 1, VIEW_H);
+  }
+
+  // Reel-change burn: a scorched ring that flares in the corner every ~8s.
+  const burn = frame % 470;
+  if (burn < 9) {
+    const k = 1 - burn / 9;
+    const bx = VIEW_W - 72;
+    const by = 72;
+    ctx.globalAlpha = 0.3 * k;
+    ctx.fillStyle = '#1c0f06';
+    ctx.beginPath();
+    ctx.arc(bx, by, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.22 * k;
+    ctx.strokeStyle = '#d9913f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(bx, by, 24, 0, Math.PI * 2);
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -147,6 +267,10 @@ export function drawBossIntro(ctx: CanvasRenderingContext2D, intro: number): voi
 
   const text = intro > 36 ? 'READY?' : 'FIGHT!';
   ctx.save();
+  // A framed deco banner the word sits on.
+  const bw = 360;
+  const bh = 96;
+  decoPanel(ctx, (VIEW_W - bw) / 2, VIEW_H / 2 - bh / 2 - 14, bw, bh, 'rgba(17,17,42,0.85)');
   ctx.textAlign = 'center';
   ctx.font = "40px 'Press Start 2P', monospace";
   ctx.fillStyle = '#11112a';
@@ -166,6 +290,8 @@ export function drawKoCard(ctx: CanvasRenderingContext2D, ko: number): void {
   ctx.save();
   ctx.translate(VIEW_W / 2, VIEW_H / 2 - 30);
   ctx.scale(scale, scale);
+  // Comic "POW!" starburst behind the word.
+  starburst(ctx, 0, 4, early ? 250 : 290, -ko * 0.02);
   ctx.textAlign = 'center';
   ctx.font = `${early ? 44 : 30}px 'Press Start 2P', monospace`;
   ctx.fillStyle = '#11112a';
@@ -181,10 +307,20 @@ export function drawStageSelect(ctx: CanvasRenderingContext2D, state: GameState)
   ctx.fillStyle = '#0d0b1a';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
+  // Framed deco border around the whole select screen.
+  decoFrame(ctx, 24, 24, VIEW_W - 48, VIEW_H - 48);
+
   ctx.textAlign = 'center';
   ctx.font = "26px 'Press Start 2P', monospace";
   ctx.fillStyle = PALETTE.bossCrown;
   ctx.fillText('STAGE SELECT', VIEW_W / 2, 68);
+  // Gold rule under the title.
+  ctx.strokeStyle = DECO_GOLD;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(VIEW_W / 2 - 180, 86);
+  ctx.lineTo(VIEW_W / 2 + 180, 86);
+  ctx.stroke();
 
   const entries = buildSelectEntries(loadProgress());
   const cx = VIEW_W / 2;
@@ -222,6 +358,87 @@ export function drawStageSelect(ctx: CanvasRenderingContext2D, state: GameState)
   ctx.fillText('↑ ↓  MOVE     ← →  DIFFICULTY     SPACE / ENTER  SELECT', VIEW_W / 2, VIEW_H - 24);
 }
 
+// ---- Screen transitions (iris-in reveal + film-burn on death) ----
+
+// The iris remembers the last screen it drew, so a change can trigger a reveal.
+let irisPrev: Screen | null = null;
+let irisFrames = 0;
+
+/** Note the current screen; kick off an iris-in whenever it changes. */
+export function noteScreen(screen: Screen): void {
+  if (screen !== irisPrev) {
+    irisFrames = IRIS_FRAMES;
+    irisPrev = screen;
+  }
+}
+
+/**
+ * Iris-in: a black frame with a growing circular hole that reveals the freshly
+ * entered screen — the classic 1930s cartoon "scene open". Drawn last so it
+ * masks everything (world, HUD, cards). Self-decrementing; a no-op when idle.
+ */
+export function drawIris(ctx: CanvasRenderingContext2D): void {
+  if (irisFrames <= 0) return;
+  const pr = 1 - irisFrames / IRIS_FRAMES; // 0 → 1 as it opens
+  const eased = pr * pr * (3 - 2 * pr); // smoothstep
+  const maxR = Math.hypot(VIEW_W, VIEW_H) / 2;
+  const holeR = eased * maxR;
+  const cx = VIEW_W / 2;
+  const cy = VIEW_H / 2;
+  ctx.save();
+  ctx.fillStyle = '#0a0705';
+  ctx.beginPath();
+  ctx.rect(0, 0, VIEW_W, VIEW_H);
+  ctx.arc(cx, cy, holeR, 0, Math.PI * 2); // even-odd punches a circular hole
+  ctx.fill('evenodd');
+  // A warm projector glow on the opening edge.
+  if (holeR > 4) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.18 * (1 - eased);
+    const ring = ctx.createRadialGradient(cx, cy, holeR * 0.82, cx, cy, holeR);
+    ring.addColorStop(0, 'rgba(255,196,110,0)');
+    ring.addColorStop(1, 'rgba(255,196,110,0.9)');
+    ctx.fillStyle = ring;
+    ctx.beginPath();
+    ctx.arc(cx, cy, holeR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  irisFrames -= 1;
+}
+
+/**
+ * Film-burn: on death the frame "catches fire" — a scorched bloom with a hot
+ * orange rim flares from centre and fades. `burn` is the frames-remaining
+ * counter; `reduced` calms it under reduced motion. A no-op when burn is 0.
+ */
+export function drawFilmBurn(ctx: CanvasRenderingContext2D, burn: number, reduced: boolean): void {
+  if (burn <= 0) return;
+  const p = 1 - burn / BURN_FRAMES; // 0 → 1 over the burn
+  const cx = VIEW_W / 2;
+  const cy = VIEW_H / 2;
+  const r = (0.2 + p * 0.8) * VIEW_H * 0.6;
+  const fade = (1 - p) * (reduced ? 0.5 : 1);
+  ctx.save();
+  // An initial white-hot flash (skipped under reduced motion).
+  if (!reduced && p < 0.35) {
+    ctx.globalAlpha = ((0.35 - p) / 0.35) * 0.55;
+    ctx.fillStyle = '#fff2d8';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  }
+  // Charred bloom with a glowing rim.
+  const g = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r);
+  g.addColorStop(0, `rgba(22,11,6,${0.85 * fade})`);
+  g.addColorStop(0.72, `rgba(120,42,14,${0.8 * fade})`);
+  g.addColorStop(0.9, `rgba(255,150,44,${0.95 * fade})`);
+  g.addColorStop(1, 'rgba(255,210,120,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 /** Boss name, a wide HP bar, and one pip per phase remaining. */
 export function drawBossHud(ctx: CanvasRenderingContext2D, boss: Boss): void {
   const barW = 600;
@@ -230,13 +447,16 @@ export function drawBossHud(ctx: CanvasRenderingContext2D, boss: Boss): void {
   const y = VIEW_H - 40;
 
   ctx.save();
-  // Name.
+  // Deco frame around the whole HP gauge.
+  decoFrame(ctx, x - 16, y - 12, barW + 32, barH + 24);
+
+  // Boss name above the framed gauge.
   ctx.font = "10px 'Press Start 2P', monospace";
   ctx.textAlign = 'center';
   ctx.fillStyle = '#11112a';
-  ctx.fillText(boss.name, VIEW_W / 2 + 1, y - 7);
+  ctx.fillText(boss.name, VIEW_W / 2 + 1, y - 19);
   ctx.fillStyle = PALETTE.bossCrown;
-  ctx.fillText(boss.name, VIEW_W / 2, y - 8);
+  ctx.fillText(boss.name, VIEW_W / 2, y - 20);
 
   // Track + fill.
   ctx.fillStyle = PALETTE.bossHpBack;

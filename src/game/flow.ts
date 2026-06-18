@@ -7,6 +7,7 @@ import {
   BEST_KEY,
   BOSS_INTRO,
   BOSS_SCORE,
+  BURN_FRAMES,
   CLEAR_BONUS,
   FLASH_FRAMES,
   GRADE_FAST_TICKS,
@@ -162,6 +163,8 @@ export function advanceStage(state: GameState): void {
 
 /** Lose a life; respawn in place, or end the game at 0 lives. */
 export function loseLife(state: GameState): void {
+  // The film "catches fire" on every death — boss retry or life lost.
+  state.burn = BURN_FRAMES;
   // On a boss, death is an instant retry (infinite tries, no life cost).
   if (state.screen === 'boss') {
     bossRetry(state);
@@ -186,6 +189,7 @@ export function loseLife(state: GameState): void {
   state.parryOrbs = spawnOrbs(state.level);
   state.mushrooms = [];
   state.projectiles = [];
+  state.puffs = [];
   state.keys = makeKeys();
   state.jumpLatch = false;
   state.shootLatch = false;
@@ -267,6 +271,7 @@ export function enterBoss(state: GameState, bossIndex: number): void {
   state.projectiles = [];
   state.hazards = [];
   state.pops = [];
+  state.puffs = [];
   state.keys = makeKeys();
   state.jumpLatch = false;
   state.shootLatch = false;
@@ -300,6 +305,7 @@ export function bossRetry(state: GameState): void {
   state.hazards = [];
   state.mushrooms = [];
   state.pops = [];
+  state.puffs = [];
   state.keys = makeKeys();
   state.jumpLatch = false;
   state.shootLatch = false;

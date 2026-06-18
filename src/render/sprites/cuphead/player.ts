@@ -6,6 +6,7 @@
 import { PALETTE } from '../../../game/constants';
 import type { Player, Skin } from '../../../types';
 import { INK, boilOffset, inkEllipse, inkHose, inkRoundRect, inkShadow, pieEye, softHi } from '../../ink';
+import { playerSquash } from '../squash';
 
 /** Hand-drawn art height; a shorter hitbox squashes the whole figure to fit. */
 const ART_H = 58;
@@ -38,13 +39,16 @@ export function drawPipInk(
     ctx.restore();
   }
 
-  // Anchor feet at the bottom and squash to the live hitbox (crouch crawl pose).
-  ctx.save();
-  ctx.translate(0, feet);
-  if (h !== ART_H) ctx.scale(1, h / ART_H);
-  ctx.translate(0, -ART_H);
-
+  // Anchor feet at the bottom and squash to the live hitbox (crouch crawl pose),
+  // then layer the velocity-driven squash-and-stretch about the feet-centre.
   const cx = x + w / 2;
+  const sq = playerSquash(p, frame);
+  ctx.save();
+  ctx.translate(cx, feet);
+  ctx.scale(sq.sx, sq.sy);
+  if (h !== ART_H) ctx.scale(1, h / ART_H);
+  ctx.translate(-cx, -ART_H);
+
   const moving = Math.abs(p.vx) > 0.1 && p.onGround;
   const airborne = !p.onGround;
   // Walk swing: legs/arms swing in opposition on a 2-step cadence.

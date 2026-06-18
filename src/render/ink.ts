@@ -58,6 +58,16 @@ export function boilOffset(frame: number, seed: number, on: boolean): { dx: numb
   return { dx: (h - 0.5) * 1.5, dy: ((h * 6.0) % 1 - 0.5) * 1.5 };
 }
 
+/**
+ * Smooth periodic sway/breathe offset for idle secondary animation — trees
+ * leaning in a breeze, a cloud squashing as it drifts, a sun disc breathing.
+ * Deterministic sine: `period` is in frames, `amp` the peak displacement, and
+ * `phase` (0..1) decorrelates neighbouring shapes so they don't move in lockstep.
+ */
+export function sway(frame: number, period: number, amp: number, phase = 0): number {
+  return Math.sin((frame / period + phase) * Math.PI * 2) * amp;
+}
+
 export interface InkOpts {
   /** Current frame (drives boil). */
   frame: number;

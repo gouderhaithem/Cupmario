@@ -5,6 +5,7 @@
 
 import { sfx } from '../engine/audio';
 import { DASH_CD, DASH_FRAMES, DASH_IFRAMES, DASH_SPEED } from './constants';
+import { spawnDashDust } from './puff';
 import type { GameState } from './state';
 
 export function updateDash(state: GameState): void {
@@ -28,6 +29,7 @@ export function updateDash(state: GameState): void {
     // Grant i-frames via the shared invulnerability counter (collisions test
     // `hurt <= 0`), so a dash punches through bolts and enemies cleanly.
     p.hurt = Math.max(p.hurt, DASH_IFRAMES);
+    spawnDashDust(state, p.x + p.w / 2, p.y + p.h, p.dashDir);
     sfx('dash');
   }
 

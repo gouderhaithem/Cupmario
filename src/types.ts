@@ -336,6 +336,9 @@ export interface Player {
   dashCd: number;
   /** Dash travel direction, captured when the dash starts. */
   dashDir: -1 | 1;
+  /** Landing-impact squash (0 = none … 1 = hard landing); decays each frame and
+   *  drives the render-only squash-and-stretch. */
+  landSquash: number;
 }
 
 export interface Keys {
@@ -363,6 +366,20 @@ export interface Pop {
   life: number;
   text: string;
   color: string;
+}
+
+/** A little dust-cloud particle kicked up on landing, dashing, or jumping. */
+export interface Puff {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Remaining life in frames. */
+  life: number;
+  /** Initial life, so the draw can fade + grow the cloud over its lifetime. */
+  max: number;
+  /** Base radius in px. */
+  r: number;
 }
 
 // ---- Boss fight ----

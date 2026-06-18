@@ -22,7 +22,10 @@ type SfxName =
 
 let actx: AudioContext | null = null;
 let master: GainNode | null = null;
-let musicTimer: ReturnType<typeof setInterval> | null = null;
+// One self-rescheduling timer drives the whole combo; `musicGen` invalidates a
+// pending beat after stopMusic() so a late callback can't resurrect the loop.
+let musicTimer: ReturnType<typeof setTimeout> | null = null;
+let musicGen = 0;
 
 /** Create the AudioContext on first gesture, or resume if suspended. */
 export function initAudio(): void {
@@ -141,70 +144,284 @@ export function sfx(name: SfxName): void {
   }
 }
 
-// ---- Background music: a step sequencer, one track per level ----
-const TRACKS: number[][] = [
-  [523, 659, 784, 659, 587, 698, 659, 587],
-  [440, 523, 659, 587, 523, 440, 415, 392],
-  [330, 392, 494, 392, 466, 587, 466, 392],
+// ---- Background music: a 1930s small-combo jazz engine ----
+//
+// A walking upright bass, swung "oom-pah" comping chords, a syncopated lead, and
+// a brush-kit shuffle (kick / brushed snare / hi-hat), all synthesized. One
+// self-rescheduling timer fires once per quarter-note beat and schedules that
+// beat's voices ahead of time on the AudioContext clock; swing comes from
+// placing the upbeat two-thirds of the way through the beat (triplet feel).
+
+/** MIDI note number → frequency (A4 = 69 = 440 Hz). */
+function mtof(midi: number): number {
+  return 440 * 2 ** ((midi - 69) / 12);
+}
+
+type Quality = 'maj' | 'min' | 'dom7';
+/** Chord interval stacks (semitones from root); comping uses the first three. */
+const CHORD: Record<Quality, number[]> = {
+  maj: [0, 4, 7, 11],
+  min: [0, 3, 7, 10],
+  dom7: [0, 4, 7, 10],
+};
+
+interface Track {
+  bpm: number;
+  /** Lead/comp key centre (MIDI) and the low bass octave root (MIDI). */
+  keyRoot: number;
+  bassRoot: number;
+  /** One chord per bar: r = semitone offset from key root, q = quality. */
+  prog: Array<{ r: number; q: Quality }>;
+  /** Swung-eighth lead phrase over the whole progression (bars × 8); null = rest. */
+  lead: Array<number | null>;
+  bassType: OscillatorType;
+  leadType: OscillatorType;
+  compType: OscillatorType;
+  /** Drum weight: 1 = soft brushes (levels), >1 = harder kit (boss). */
+  punch: number;
+}
+
+const r = null; // rest, for terse lead phrases below
+
+const LEVEL_TRACKS: Track[] = [
+  // 1 — bright C-major ragtime (I–vi–IV–V).
+  {
+    bpm: 150,
+    keyRoot: 60,
+    bassRoot: 36,
+    prog: [{ r: 0, q: 'maj' }, { r: 9, q: 'min' }, { r: 5, q: 'maj' }, { r: 7, q: 'dom7' }],
+    lead: [
+      4, r, 7, 4, r, 9, 7, r,
+      9, r, 7, 9, 12, r, 9, 7,
+      5, r, 9, 5, 4, r, 2, r,
+      7, r, 2, 7, 11, r, 7, r,
+    ],
+    bassType: 'triangle',
+    leadType: 'square',
+    compType: 'triangle',
+    punch: 1,
+  },
+  // 2 — jauntier F-major strut (I–vi–IV–V).
+  {
+    bpm: 168,
+    keyRoot: 65,
+    bassRoot: 41,
+    prog: [{ r: 0, q: 'maj' }, { r: 9, q: 'min' }, { r: 5, q: 'maj' }, { r: 7, q: 'dom7' }],
+    lead: [
+      7, 7, r, 4, 5, r, 7, r,
+      9, r, 12, 9, 7, r, 5, r,
+      5, 7, r, 9, 7, r, 4, r,
+      7, r, 11, 7, 12, r, 7, r,
+    ],
+    bassType: 'triangle',
+    leadType: 'square',
+    compType: 'triangle',
+    punch: 1,
+  },
+  // 3 — bluesy A-minor (i–iv–V7–i).
+  {
+    bpm: 162,
+    keyRoot: 69,
+    bassRoot: 45,
+    prog: [{ r: 0, q: 'min' }, { r: 5, q: 'min' }, { r: 7, q: 'dom7' }, { r: 0, q: 'min' }],
+    lead: [
+      0, r, 3, 5, r, 7, 5, 3,
+      5, r, 3, 5, 7, r, 5, r,
+      7, r, 10, 7, 6, r, 5, r,
+      3, r, 0, 3, 5, r, 0, r,
+    ],
+    bassType: 'triangle',
+    leadType: 'square',
+    compType: 'triangle',
+    punch: 1,
+  },
 ];
 
+// Driving D-minor boss combo (i–i–VI–V7) — sawtooth lead/bass, harder kit.
+const BOSS_TRACK: Track = {
+  bpm: 150,
+  keyRoot: 62,
+  bassRoot: 38,
+  prog: [{ r: 0, q: 'min' }, { r: 0, q: 'min' }, { r: 8, q: 'maj' }, { r: 7, q: 'dom7' }],
+  lead: [
+    0, 12, 7, 12, 0, 12, 10, 12,
+    0, 12, 7, 12, 5, 7, 5, 3,
+    8, r, 5, 8, 10, r, 8, r,
+    7, r, 4, 7, 5, r, 4, 2,
+  ],
+  bassType: 'sawtooth',
+  leadType: 'sawtooth',
+  compType: 'square',
+  punch: 1.6,
+};
+
+// ---- Synth voices (all routed through the shared master gain) ----
+
+/** A pitched voice with a pluck/decay envelope. */
+function osc(midi: number, t: number, dur: number, type: OscillatorType, vol: number, atk = 0.008): void {
+  if (!actx) return;
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(mtof(midi), t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + atk);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g);
+  g.connect(master ?? actx.destination);
+  o.start(t);
+  o.stop(t + dur + 0.03);
+}
+
+// One reusable white-noise buffer for the brush kit (created on first use).
+let noiseBuf: AudioBuffer | null = null;
+function noise(): AudioBuffer | null {
+  if (!noiseBuf && actx) {
+    const len = (actx.sampleRate * 0.4) | 0;
+    noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+
+/** A filtered noise burst — the brushed snare and hi-hat. */
+function noiseHit(t: number, dur: number, vol: number, hp: number): void {
+  if (!actx) return;
+  const buf = noise();
+  if (!buf) return;
+  const src = actx.createBufferSource();
+  src.buffer = buf;
+  const f = actx.createBiquadFilter();
+  f.type = 'highpass';
+  f.frequency.value = hp;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f);
+  f.connect(g);
+  g.connect(master ?? actx.destination);
+  src.start(t);
+  src.stop(t + dur + 0.02);
+}
+
+/** A soft kick: a sine thump that drops in pitch. */
+function kick(t: number, vol: number): void {
+  if (!actx) return;
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(130, t);
+  o.frequency.exponentialRampToValueAtTime(45, t + 0.11);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  o.connect(g);
+  g.connect(master ?? actx.destination);
+  o.start(t);
+  o.stop(t + 0.2);
+}
+
+/** The walking-bass note for one beat: root, third, fifth, then a chromatic
+ *  approach into the next bar's root. */
+function walkNote(track: Track, bar: number, beatInBar: number): number {
+  const chord = track.prog[bar];
+  const root = track.bassRoot + chord.r;
+  if (beatInBar === 0) return root;
+  if (beatInBar === 1) return root + (chord.q === 'min' ? 3 : 4);
+  if (beatInBar === 2) return root + 7;
+  const next = track.bassRoot + track.prog[(bar + 1) % track.prog.length].r;
+  return next - 1; // lead a half-step into the next downbeat
+}
+
+/** Schedule every voice for one beat, `dur` seconds long, starting at `t0`. */
+function scheduleBeat(track: Track, beat: number, t0: number, dur: number): void {
+  const bars = track.prog.length;
+  const bar = Math.floor(beat / 4) % bars;
+  const bib = beat % 4;
+  const swing = dur * 0.66; // upbeat lands two-thirds through the beat
+  const chord = track.prog[bar];
+
+  // Walking bass — a note every beat.
+  osc(walkNote(track, bar, bib), t0, dur * 0.92, track.bassType, 0.1);
+
+  // Drum shuffle: kick on 1 & 3, brushed snare backbeat on 2 & 4, swung hats.
+  if (bib === 0 || bib === 2) kick(t0, 0.16 * track.punch);
+  else noiseHit(t0, 0.13, 0.05 * track.punch, 1300);
+  noiseHit(t0, 0.03, 0.022 * track.punch, 7000);
+  noiseHit(t0 + swing, 0.03, 0.016 * track.punch, 7000);
+
+  // "Pah" comp stab on the backbeats (2 & 4): the upper triad, short.
+  if (bib === 1 || bib === 3) {
+    const root = track.keyRoot + chord.r;
+    for (const iv of CHORD[chord.q].slice(0, 3)) {
+      osc(root + iv, t0, dur * 0.45, track.compType, 0.035);
+    }
+  }
+
+  // Syncopated lead — two swung eighths per beat from the phrase.
+  const idx = bar * 8 + bib * 2;
+  const dn = track.lead[idx];
+  const up = track.lead[idx + 1];
+  if (dn != null) osc(track.keyRoot + dn, t0, swing * 0.95, track.leadType, 0.06);
+  if (up != null) osc(track.keyRoot + up, t0 + swing, (dur - swing) * 0.95, track.leadType, 0.06);
+}
+
 /**
- * Start the per-level loop. `isPlaying` is checked each step so music only
- * sounds during play; always call stopMusic() on a screen change.
+ * Drive a track on a self-rescheduling beat timer. `beatDur()` is re-read every
+ * beat (so the boss tempo can ramp mid-song); `gate()` is checked each beat so
+ * music only sounds on the right screen — when false the loop idles, ready to
+ * resume. Always call stopMusic() on a screen change.
  */
+function startLoop(track: Track, beatDur: () => number, gate: () => boolean): void {
+  stopMusic();
+  if (!actx) return;
+  const myGen = ++musicGen;
+  let beat = 0;
+  const step = (): void => {
+    if (myGen !== musicGen || !actx) return;
+    if (gate()) scheduleBeat(track, beat, actx.currentTime + 0.04, beatDur());
+    beat++;
+    musicTimer = setTimeout(step, beatDur() * 1000);
+  };
+  step();
+}
+
+/** Start the per-level combo. `isPlaying` gates it to the play screen. */
 export function startMusic(levelIndex: number, isPlaying: () => boolean): void {
-  stopMusic();
-  if (!actx) return;
-  const seq = TRACKS[levelIndex] ?? TRACKS[0];
-  const stepMs = levelIndex === 2 ? 200 : levelIndex === 1 ? 220 : 260;
-  let i = 0;
-  musicTimer = setInterval(() => {
-    if (!actx || !isPlaying()) return;
-    const f = seq[i % seq.length];
-    beep(f, 0.16, 'triangle', 0.05);
-    if (i % 2 === 0) beep(f / 2, 0.22, 'sine', 0.06);
-    i++;
-  }, stepMs);
+  const track = LEVEL_TRACKS[levelIndex] ?? LEVEL_TRACKS[0];
+  const beatDur = 60 / track.bpm;
+  startLoop(track, () => beatDur, isPlaying);
 }
 
-/** A darker, driving boss-fight loop (minor key, faster step). */
-const BOSS_TRACK: number[] = [220, 233, 220, 175, 196, 220, 175, 147];
-const BOSS_STEP_BASE = 170;
-let bossPlaying: (() => boolean) | null = null;
-let bossStep = BOSS_STEP_BASE;
+// Boss tempo: the higher the phase, the smaller `bossTempoVal`, the faster the
+// beat. setBossTempo() is called with 170, 145, 120, 95 across the phases.
+const BOSS_TEMPO_BASE = 170;
+let bossTempoVal = BOSS_TEMPO_BASE;
 
-/** (Re)start the boss loop at the current tempo, preserving the gate. */
-function runBossLoop(): void {
-  if (musicTimer) clearInterval(musicTimer);
-  let i = 0;
-  musicTimer = setInterval(() => {
-    if (!actx || !bossPlaying || !bossPlaying()) return;
-    const f = BOSS_TRACK[i % BOSS_TRACK.length];
-    beep(f, 0.14, 'sawtooth', 0.05);
-    if (i % 2 === 0) beep(f / 2, 0.2, 'square', 0.05);
-    i++;
-  }, bossStep);
+/** Beat length (s) for the boss combo, from the current tempo value. */
+function bossBeatDur(): number {
+  const bpm = Math.min(210, 150 + (BOSS_TEMPO_BASE - bossTempoVal) * 0.667);
+  return 60 / bpm;
 }
 
-/** Start the boss-fight music. `isPlaying` gates it to the boss screen. */
+/** Start the boss-fight combo. `isPlaying` gates it to the boss screen. */
 export function startBossMusic(isPlaying: () => boolean): void {
-  stopMusic();
-  if (!actx) return;
-  bossPlaying = isPlaying;
-  bossStep = BOSS_STEP_BASE;
-  runBossLoop();
+  bossTempoVal = BOSS_TEMPO_BASE;
+  startLoop(BOSS_TRACK, bossBeatDur, isPlaying);
 }
 
-/** Change the boss-music step interval (faster = tenser) and restart the loop. */
+/** Drive the boss music harder (smaller value = faster). The loop picks up the
+ *  new tempo on its next beat — no restart needed. */
 export function setBossTempo(stepMs: number): void {
-  bossStep = Math.max(80, stepMs);
-  if (bossPlaying) runBossLoop();
+  bossTempoVal = Math.max(80, stepMs);
 }
 
 export function stopMusic(): void {
+  musicGen++;
   if (musicTimer) {
-    clearInterval(musicTimer);
+    clearTimeout(musicTimer);
     musicTimer = null;
   }
-  bossPlaying = null;
 }

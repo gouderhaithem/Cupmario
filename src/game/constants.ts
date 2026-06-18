@@ -23,6 +23,18 @@ export const JUMP = -14.2;
 export const SPEED = 4.5;
 export const MAXFALL = 16;
 
+// ---- Landing juice (squash-and-stretch + dust) ----
+/** Minimum downward speed on touchdown to trigger a dust puff + squash. */
+export const LAND_DUST_MIN = 5;
+/** Per-frame decay of the landing-squash value (drives the spring-back). */
+export const LAND_SQUASH_DECAY = 0.14;
+
+// ---- Screen transitions (vintage iris wipe + film-burn on death) ----
+/** Frames for the iris-in reveal when a new screen appears. */
+export const IRIS_FRAMES = 28;
+/** Frames the film-burn scorch flares for after a death. */
+export const BURN_FRAMES = 26;
+
 // ---- Dash (run-and-gun dodge) ----
 /** Horizontal burst velocity during a dash (px/frame). */
 export const DASH_SPEED = 11;

@@ -28,6 +28,8 @@ import {
 import { bumpBlocks } from './blocks';
 import { updateDash } from './dash';
 import { collideX, collideY, solid } from './physics';
+import { spawnJumpDust, spawnLandDust } from './puff';
+import { LAND_DUST_MIN, LAND_SQUASH_DECAY } from './constants';
 import type { GameState } from './state';
 import type { Level, Player, Weapon } from '../types';
 import { currentWeapon } from './weapons';
@@ -139,6 +141,7 @@ export function updatePlayer(state: GameState): void {
     state.jumpBuffer = 0;
     state.coyote = 0;
     state.jumping = true;
+    spawnJumpDust(state, p.x + p.w / 2, p.y + p.h);
     sfx('jump');
   }
 
@@ -177,9 +180,19 @@ export function updatePlayer(state: GameState): void {
   // Vertical move + tile collision (sets onGround). A head-bump on a question
   // block (rising, then stopped without landing) pops its reward.
   const risingBefore = p.vy < 0;
+  const airBefore = !p.onGround;
+  const fallSpeed = p.vy;
   p.y += p.vy;
   collideY(level, p);
   if (risingBefore && p.vy === 0 && !p.onGround) bumpBlocks(state);
+
+  // Touchdown: a hard enough landing squashes Pip and kicks up a dust fan.
+  if (airBefore && p.onGround && fallSpeed > LAND_DUST_MIN) {
+    const impact = Math.min(1, fallSpeed / MAXFALL);
+    p.landSquash = 0.5 + impact * 0.5;
+    spawnLandDust(state, p.x + p.w / 2, p.y + p.h, impact);
+  }
+  if (p.landSquash > 0) p.landSquash = Math.max(0, p.landSquash - LAND_SQUASH_DECAY);
 
   // Landing ends a stomp-chain combo.
   if (p.onGround) state.combo = 0;

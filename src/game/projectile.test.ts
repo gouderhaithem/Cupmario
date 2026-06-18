@@ -97,6 +97,7 @@ describe('laserSweep vs crouch', () => {
       dashFrames: 0,
       dashCd: 0,
       dashDir: 1,
+      landSquash: 0,
     };
   }
   function beamState(player: Player): GameState {

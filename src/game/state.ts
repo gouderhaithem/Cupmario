@@ -1,7 +1,7 @@
 // The single GameState object. All systems read/write through it; render.ts
 // only reads. Per-frame mutation here is intentional (see CLAUDE.md rules 4-5).
 
-import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Projectile, Screen, Style, WeaponId } from '../types';
+import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Puff, Projectile, Screen, Style, WeaponId } from '../types';
 import { ASSIST_BONUS_HP, BEST_KEY, LEVEL_TIME, MAX_HP, PLAYER_H, PLAYER_W, START_LIVES } from './constants';
 import { buildLevel, spawnCheckpoints, spawnCrumbles, spawnEnemies, spawnMovers, spawnOrbs } from './level';
 import { LEVELS } from './levels';
@@ -35,6 +35,8 @@ export interface GameState {
   projectiles: Projectile[];
   keys: Keys;
   pops: Pop[];
+  /** Transient dust-cloud particles from landing / dashing / jumping (FX only). */
+  puffs: Puff[];
 
   score: number;
   coins: number;
@@ -72,6 +74,9 @@ export interface GameState {
   parryLatch: boolean;
   /** Frames of white screen-flash remaining (MEGABLAST), decays to 0. */
   flash: number;
+  /** Frames of the film-burn scorch remaining after a death; decays in the
+   *  render tick (cosmetic only, so it ages even while the world is frozen). */
+  burn: number;
   /** The live boss during a 'boss' fight, or null on run levels. */
   boss: Boss | null;
   /** Timed arena hazards (root pillars / electrified floor) during a boss fight. */
@@ -168,6 +173,7 @@ export function spawnPlayer(level: Level, maxHp: number = MAX_HP): Player {
     dashFrames: 0,
     dashCd: 0,
     dashDir: 1,
+    landSquash: 0,
   };
 }
 
@@ -195,6 +201,7 @@ export function createState(): GameState {
     projectiles: [],
     keys: makeKeys(),
     pops: [],
+    puffs: [],
     score: 0,
     coins: 0,
     lives: START_LIVES,
@@ -215,6 +222,7 @@ export function createState(): GameState {
     superLatch: false,
     parryLatch: false,
     flash: 0,
+    burn: 0,
     boss: null,
     hazards: [],
     bossKo: 0,
@@ -263,6 +271,7 @@ export function loadLevel(state: GameState, levelIndex: number): void {
   state.mushrooms = [];
   state.projectiles = [];
   state.pops = [];
+  state.puffs = [];
   state.keys = makeKeys();
   state.jumpLatch = false;
   state.coyote = 0;
@@ -278,6 +287,7 @@ export function loadLevel(state: GameState, levelIndex: number): void {
   state.superLatch = false;
   state.parryLatch = false;
   state.flash = 0;
+  state.burn = 0;
   state.boss = null;
   state.hazards = [];
   state.bossKo = 0;

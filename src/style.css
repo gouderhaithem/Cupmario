@@ -56,8 +56,12 @@ html, body {
 #hud {
   height: 52px;
   flex: 0 0 52px;
-  background: #11112a;
-  border-bottom: 4px solid #2a2a55;
+  /* Deco bar: a warm dark gradient capped by a gold pinstripe over an ink rule. */
+  background: linear-gradient(#191940, #0e0e24);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -3px 0 var(--gold),
+    inset 0 -6px 0 #2a2a55;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -303,18 +307,71 @@ html, body {
 
 .overlay.hidden { display: none; }
 
+/* Art-deco card frame around every overlay: a gold double-rule inset from the
+   edges with an ink keyline and a soft inner vignette, behind the content. */
+.overlay::before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 3px double var(--gold);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 2px var(--ink),
+    inset 0 0 24px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(255, 217, 74, 0.18);
+  z-index: -1;
+  pointer-events: none;
+}
+/* Four corner studs (gold diamonds) clamped to the frame corners. */
+.overlay::after {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(var(--gold) 38%, transparent 42%),
+    radial-gradient(var(--gold) 38%, transparent 42%),
+    radial-gradient(var(--gold) 38%, transparent 42%),
+    radial-gradient(var(--gold) 38%, transparent 42%);
+  background-repeat: no-repeat;
+  background-size: 12px 12px;
+  background-position: left top, right top, left bottom, right bottom;
+}
+
 #ov-title { background: rgba(17, 17, 42, 0.82); gap: 18px; }
 #ov-gameover { background: rgba(40, 12, 16, 0.86); gap: 18px; }
 #ov-levelup { background: rgba(20, 20, 51, 0.88); }
 #ov-win { background: rgba(17, 42, 28, 0.86); }
 
 .ov-logo {
-  font-size: 42px;
+  font-size: 46px;
   color: var(--gold);
-  text-shadow: 5px 5px 0 #b3432a;
+  letter-spacing: 2px;
+  /* Gilded, embossed title: stacked warm shadows + a soft outer glow. */
+  text-shadow:
+    3px 3px 0 #b3432a,
+    6px 6px 0 #7a2a18,
+    0 0 18px rgba(255, 217, 74, 0.35);
 }
 
-.ov-sub { font-size: 13px; color: var(--cyan); letter-spacing: 3px; }
+.ov-sub {
+  font-size: 13px;
+  color: var(--cyan);
+  letter-spacing: 3px;
+  /* A pair of gold rules flanking the subtitle for an art-deco header. */
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.ov-sub::before,
+.ov-sub::after {
+  content: '';
+  width: 46px;
+  height: 3px;
+  background: var(--gold);
+  box-shadow: 0 4px 0 #b3842a;
+}
 
 .ov-help {
   margin-top: 14px;

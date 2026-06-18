@@ -30,6 +30,7 @@ function player(over: Partial<Player> = {}): Player {
     dashFrames: 0,
     dashCd: 0,
     dashDir: 1,
+    landSquash: 0,
     ...over,
   };
 }

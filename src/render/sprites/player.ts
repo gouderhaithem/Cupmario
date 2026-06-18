@@ -4,6 +4,7 @@ import { PALETTE } from '../../game/constants';
 import type { Player, Skin } from '../../types';
 import { boilOn, isCuphead } from '../style-ctx';
 import { drawPipInk } from './cuphead/player';
+import { playerSquash } from './squash';
 import { rect } from './util';
 
 /** Pip, drawn in the current level's skin, with walk/jump/crouch poses. */
@@ -35,11 +36,15 @@ export function drawPip(ctx: CanvasRenderingContext2D, p: Player, skin: Skin, fr
   }
 
   // Draw the ART_H-tall art with feet anchored at the bottom, squashed
-  // vertically to the live hitbox height — so a crouch reads as a crawl pose.
+  // vertically to the live hitbox height — so a crouch reads as a crawl pose —
+  // then layer the velocity-driven squash-and-stretch about the feet-centre.
+  const cx = x + w / 2;
+  const sq = playerSquash(p, frame);
   ctx.save();
-  ctx.translate(0, feet);
+  ctx.translate(cx, feet);
+  ctx.scale(sq.sx, sq.sy);
   if (h !== ART_H) ctx.scale(1, h / ART_H);
-  ctx.translate(0, -ART_H);
+  ctx.translate(-cx, -ART_H);
   const y = 0; // art-local top; feet sit at ART_H
 
   const moving = Math.abs(p.vx) > 0.1 && p.onGround;

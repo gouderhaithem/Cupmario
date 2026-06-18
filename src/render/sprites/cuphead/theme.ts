@@ -35,6 +35,12 @@ export interface InkTheme {
   backdrop: 'hills' | 'crystals' | 'girders';
   clouds: boolean;
   stars: boolean;
+  /** Dark silhouette tint for the near, out-of-focus foreground plane. */
+  fg: string;
+  /** Ambient drifting motes that breathe life into the mid-air space. */
+  ambient: 'petals' | 'fireflies' | 'embers' | 'none';
+  /** Whether warm volumetric god rays slant down from the sun. */
+  godRays: boolean;
 }
 
 const INK_THEMES: Record<Theme, InkTheme> = {
@@ -59,6 +65,9 @@ const INK_THEMES: Record<Theme, InkTheme> = {
     backdrop: 'hills',
     clouds: true,
     stars: false,
+    fg: '#4f7a28',
+    ambient: 'petals',
+    godRays: true,
   },
   // Moonlit hills — the boss arenas. Cool indigo sky, a fat moon, stars.
   night: {
@@ -81,6 +90,9 @@ const INK_THEMES: Record<Theme, InkTheme> = {
     backdrop: 'hills',
     clouds: true,
     stars: true,
+    fg: '#26323f',
+    ambient: 'fireflies',
+    godRays: false,
   },
   // Underground cavern — dark warm sky, stalactites, glowing teal crystals.
   cavern: {
@@ -103,6 +115,9 @@ const INK_THEMES: Record<Theme, InkTheme> = {
     backdrop: 'crystals',
     clouds: false,
     stars: false,
+    fg: '#120d24',
+    ambient: 'fireflies',
+    godRays: false,
   },
   // Industrial foundry — smoky amber sky, girder columns, ember glow.
   foundry: {
@@ -125,6 +140,9 @@ const INK_THEMES: Record<Theme, InkTheme> = {
     backdrop: 'girders',
     clouds: false,
     stars: false,
+    fg: '#161116',
+    ambient: 'embers',
+    godRays: false,
   },
 };
 

@@ -5,6 +5,7 @@
 import { VIEW_H, VIEW_W } from '../game/constants';
 import { rect } from './sprites';
 import { drawBackgroundInk } from './sprites/cuphead/background';
+import type { BgReact } from './sprites/cuphead/background';
 import { isCuphead } from './style-ctx';
 import { themeVisual } from './themes';
 import type { ThemeVisual } from './themes';
@@ -120,8 +121,8 @@ function drawGirders(ctx: CanvasRenderingContext2D, t: ThemeVisual, camX: number
   rect(ctx, 0, 150, VIEW_W, 16, t.near);
 }
 
-export function drawBackground(ctx: CanvasRenderingContext2D, theme: Theme, camX: number, frame: number): void {
-  if (isCuphead()) return drawBackgroundInk(ctx, theme, camX, frame);
+export function drawBackground(ctx: CanvasRenderingContext2D, theme: Theme, camX: number, frame: number, react?: BgReact): void {
+  if (isCuphead()) return drawBackgroundInk(ctx, theme, camX, frame, react);
   const t = themeVisual(theme);
 
   // Sky gradient.
