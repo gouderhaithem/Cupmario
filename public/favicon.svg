@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Life Quest — Pip's Run. Pixel-art of Pip's capped head (Level 1 blue explorer skin). -->
+  <rect width="16" height="16" rx="3" fill="#20243a"/>
+  <rect x="0.5" y="0.5" width="15" height="15" rx="2.5" fill="none" stroke="#0d0f1c" stroke-width="1"/>
+
+  <!-- cap / hair dome -->
+  <rect x="4" y="2" width="8" height="1" fill="#e8a23f"/>
+  <rect x="3" y="3" width="10" height="2" fill="#e8a23f"/>
+  <rect x="3" y="3" width="10" height="1" fill="#f6c061"/>
+
+  <!-- brim (juts forward) -->
+  <rect x="2" y="5" width="12" height="1" fill="#c9852f"/>
+
+  <!-- face -->
+  <rect x="4" y="6" width="8" height="5" fill="#f5c89a"/>
+  <rect x="3" y="7" width="1" height="2" fill="#f5c89a"/>
+  <rect x="12" y="7" width="1" height="2" fill="#f5c89a"/>
+
+  <!-- eyes -->
+  <rect x="5" y="7" width="2" height="2" fill="#1a1a2a"/>
+  <rect x="9" y="7" width="2" height="2" fill="#1a1a2a"/>
+  <rect x="5" y="7" width="1" height="1" fill="#ffffff"/>
+  <rect x="9" y="7" width="1" height="1" fill="#ffffff"/>
+
+  <!-- little smile -->
+  <rect x="6" y="10" width="4" height="1" fill="#c9852f"/>
+
+  <!-- shirt (cyan explorer) -->
+  <rect x="4" y="11" width="8" height="1" fill="#8fdcff"/>
+  <rect x="3" y="12" width="10" height="2" fill="#6ad1ff"/>
+</svg>

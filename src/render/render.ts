@@ -3,12 +3,15 @@
 
 import { COLS, FLASH_FRAMES, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
 import type { GameState } from '../game/state';
+import { setRenderStyle } from './style-ctx';
 import { drawBackground } from './background';
 import {
   drawBossHud,
   drawBossIntro,
+  drawCleanGrade,
   drawKoCard,
   drawPauseMenu,
+  drawSepiaGrade,
   drawStageSelect,
   drawVintage,
 } from './overlays';
@@ -35,6 +38,10 @@ import {
 } from './sprites';
 
 export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
+  // Select the sprite art path (cuphead rubber-hose vs mario pixel) for this
+  // frame; the sprite modules read it via style-ctx, so render.ts stays neutral.
+  setRenderStyle(state.style, state.reducedMotion);
+
   // Stage-select is a self-contained menu screen (no world).
   if (state.screen === 'select') {
     drawStageSelect(ctx, state);
@@ -154,9 +161,16 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
   // Boss HP bar + phase pips (screen-space, drawn over the world).
   if (state.boss) drawBossHud(ctx, state.boss);
 
-  // Vintage filter: vignette + faint film grain over the whole frame (§9).
-  // Skipped entirely when reduced motion is on (§13.3) — no flicker/grain.
-  if (!state.reducedMotion) drawVintage(ctx, frame);
+  // Vintage post-FX is the cuphead style's signature; the mario style stays
+  // clean and bright (no grade, no vignette, no grain). Sepia is static so it
+  // survives reduced motion; only the grain/vignette in drawVintage is gated by
+  // it (§9 / §13.3) — no flicker/grain.
+  if (state.style === 'cuphead') {
+    drawSepiaGrade(ctx);
+    if (!state.reducedMotion) drawVintage(ctx, frame);
+  } else {
+    drawCleanGrade(ctx);
+  }
 
   // MEGABLAST flash: a fading white wash over the whole viewport (screen-space).
   if (state.flash > 0) {

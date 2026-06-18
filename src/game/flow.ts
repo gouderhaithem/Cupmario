@@ -347,8 +347,8 @@ const CONFIRM_KEYS = new Set([' ', 'Enter']);
 const ADVANCE_KEYS = new Set([' ', 'Enter', 'ArrowRight', 'ArrowUp', 'w', 'W']);
 const PAUSE_KEYS = new Set(['Escape', 'p', 'P']);
 
-/** Pause-menu rows: Resume / Difficulty / Volume / Reduced Motion / Touch Controls / Quit. */
-export const PAUSE_ITEMS = 6;
+/** Pause-menu rows: Resume / Difficulty / Volume / Reduced Motion / Touch Controls / Style / Quit. */
+export const PAUSE_ITEMS = 7;
 
 /** Open the stage-select screen (from title / gameover / win). */
 export function openSelect(state: GameState): void {
@@ -399,6 +399,7 @@ function persist(state: GameState): void {
     volume: state.volume,
     reducedMotion: state.reducedMotion,
     showTouchControls: state.showTouchControls,
+    style: state.style,
   });
 }
 
@@ -435,6 +436,12 @@ function toggleTouchControls(state: GameState): void {
   persist(state);
 }
 
+/** Flip the art style (cuphead vintage ↔ mario clean) live and persist. */
+function toggleStyle(state: GameState): void {
+  state.style = state.style === 'cuphead' ? 'mario' : 'cuphead';
+  persist(state);
+}
+
 /** Navigate + act within the pause menu. */
 function pauseKey(state: GameState, key: string): void {
   if (UP_KEYS.has(key)) {
@@ -447,6 +454,7 @@ function pauseKey(state: GameState, key: string): void {
     else if (state.pauseIndex === 2) changeVolume(state, dir * 0.1);
     else if (state.pauseIndex === 3) toggleReducedMotion(state);
     else if (state.pauseIndex === 4) toggleTouchControls(state);
+    else if (state.pauseIndex === 5) toggleStyle(state);
   } else if (CONFIRM_KEYS.has(key)) {
     if (state.pauseIndex === 0) {
       state.paused = false; // Resume
@@ -457,6 +465,8 @@ function pauseKey(state: GameState, key: string): void {
     } else if (state.pauseIndex === 4) {
       toggleTouchControls(state);
     } else if (state.pauseIndex === 5) {
+      toggleStyle(state);
+    } else if (state.pauseIndex === 6) {
       state.paused = false; // Quit to title
       stopMusic();
       state.screen = 'title';

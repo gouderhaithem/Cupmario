@@ -195,6 +195,15 @@ export const STOKE_SPEED = 0.022;
 export const STOKE_AMP = 2.2 * TILE;
 /** Idle sway accumulator speed (drives the planted tree's lean + leaf rustle). */
 export const SWAY_SPEED = 0.04;
+// hop (BARKBROOD): anchored on one side, springs straight up on a timer.
+/** Launch velocity of a boss hop (px/frame, negative = up). */
+export const BOSS_HOP_V = -15;
+/** Gravity pulling a hopping boss back to the floor (px/frame²). */
+export const BOSS_HOP_GRAVITY = 0.72;
+/** Frames a hopping boss rests on the floor between jumps. */
+export const BOSS_HOP_CD = 130;
+/** Gap (px) a side-anchored boss keeps from the arena wall. */
+export const BOSS_SIDE_MARGIN = TILE;
 // rootPillars: telegraphed columns that erupt from the floor.
 export const PILLAR_WARN = 34;
 export const PILLAR_LIFE = 40;

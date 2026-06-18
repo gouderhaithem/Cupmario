@@ -1,7 +1,7 @@
 // The single GameState object. All systems read/write through it; render.ts
 // only reads. Per-frame mutation here is intentional (see CLAUDE.md rules 4-5).
 
-import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Projectile, Screen, WeaponId } from '../types';
+import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Projectile, Screen, Style, WeaponId } from '../types';
 import { ASSIST_BONUS_HP, BEST_KEY, LEVEL_TIME, MAX_HP, PLAYER_H, PLAYER_W, START_LIVES } from './constants';
 import { buildLevel, spawnCheckpoints, spawnCrumbles, spawnEnemies, spawnMovers, spawnOrbs } from './level';
 import { LEVELS } from './levels';
@@ -126,6 +126,8 @@ export interface GameState {
   volume: number;
   /** Reduced motion: suppress screen shake + the film-grain/vignette. Persisted. */
   reducedMotion: boolean;
+  /** Art-direction style: 'cuphead' (vintage grade) or 'mario' (clean). Visual only, persisted. */
+  style: Style;
   /** Show the on-screen touch arrows + action buttons. Persisted. */
   showTouchControls: boolean;
   /** Gameplay is frozen behind the pause menu. */
@@ -237,6 +239,7 @@ export function createState(): GameState {
     maxHp: MAX_HP + (settings.difficulty === 'assist' ? ASSIST_BONUS_HP : 0),
     volume: settings.volume,
     reducedMotion: settings.reducedMotion,
+    style: settings.style,
     showTouchControls: settings.showTouchControls,
     paused: false,
     pauseIndex: 0,

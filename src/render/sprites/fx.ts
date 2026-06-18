@@ -3,6 +3,16 @@
 
 import { PALETTE, TILE } from '../../game/constants';
 import type { Checkpoint, Hazard, Mushroom, ParryOrb, Projectile } from '../../types';
+import { isCuphead } from '../style-ctx';
+import {
+  drawBoltInk,
+  drawCheckpointInk,
+  drawCoinInk,
+  drawFlagInk,
+  drawHazardInk,
+  drawMushroomInk,
+  drawParryOrbInk,
+} from './cuphead/fx';
 import { rect } from './util';
 
 /**
@@ -10,6 +20,7 @@ import { rect } from './util';
  * frozen floor segment (RIME). Both flash a warning while telegraphing, then lethal.
  */
 export function drawHazard(ctx: CanvasRenderingContext2D, hz: Hazard, frame: number): void {
+  if (isCuphead()) return drawHazardInk(ctx, hz, frame);
   if (hz.kind === 'pillar') {
     if (hz.warn > 0) {
       ctx.save();
@@ -58,6 +69,7 @@ export function drawHazard(ctx: CanvasRenderingContext2D, hz: Hazard, frame: num
 
 /** A spinning coin: width oscillates with a per-coin phase. */
 export function drawCoin(ctx: CanvasRenderingContext2D, cx: number, cy: number, idx: number, frame: number): void {
+  if (isCuphead()) return drawCoinInk(ctx, cx, cy, idx, frame);
   const phase = (frame + idx * 9) * 0.11;
   const hw = Math.abs(Math.cos(phase)) * 11 + 2;
   ctx.fillStyle = PALETTE.coinSh;
@@ -78,6 +90,7 @@ export function drawCoin(ctx: CanvasRenderingContext2D, cx: number, cy: number, 
 
 /** A power-up mushroom: red domed cap with spots over a pale stem. */
 export function drawMushroom(ctx: CanvasRenderingContext2D, m: Mushroom): void {
+  if (isCuphead()) return drawMushroomInk(ctx, m);
   const { x, y, w, h } = m;
   // stem
   rect(ctx, x + w * 0.28, y + h * 0.55, w * 0.44, h * 0.45, PALETTE.shroomStem);
@@ -202,6 +215,7 @@ function drawParryable(ctx: CanvasRenderingContext2D, b: Projectile, cx: number,
  * fire reads as a distinct weapon.
  */
 export function drawBolt(ctx: CanvasRenderingContext2D, b: Projectile, frame: number): void {
+  if (isCuphead()) return drawBoltInk(ctx, b, frame);
   // Boss beam: a dashed warning line while telegraphing, a hot bar once lethal.
   if (b.beam) {
     const midY = b.y + b.h / 2;
@@ -249,6 +263,7 @@ export function drawBolt(ctx: CanvasRenderingContext2D, b: Projectile, frame: nu
  * after a parry), so its armed/disarmed state reads at a glance.
  */
 export function drawParryOrb(ctx: CanvasRenderingContext2D, orb: ParryOrb, frame: number): void {
+  if (isCuphead()) return drawParryOrbInk(ctx, orb, frame);
   const cx = orb.x + orb.w / 2;
   const cy = orb.y + orb.h / 2;
   const armed = orb.cooldown <= 0;
@@ -297,6 +312,7 @@ export function drawParryOrb(ctx: CanvasRenderingContext2D, orb: ParryOrb, frame
  * and bright pink + waving once activated (the respawn point is set).
  */
 export function drawCheckpoint(ctx: CanvasRenderingContext2D, cp: Checkpoint, frame: number): void {
+  if (isCuphead()) return drawCheckpointInk(ctx, cp, frame);
   const px = cp.x + TILE / 2 - 3;
   const groundY = 10 * TILE;
   const topY = groundY - 96;
@@ -332,6 +348,7 @@ export function drawCheckpoint(ctx: CanvasRenderingContext2D, cp: Checkpoint, fr
 
 /** The goal flag: base block, pole, knob, and a waving pennant. */
 export function drawFlag(ctx: CanvasRenderingContext2D, fx: number, frame: number): void {
+  if (isCuphead()) return drawFlagInk(ctx, fx, frame);
   const baseY = 10 * TILE - 28;
   // base block
   rect(ctx, fx - 14, baseY, 36, 28, '#caa36a');

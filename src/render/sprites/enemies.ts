@@ -2,10 +2,21 @@
 
 import { PALETTE } from '../../game/constants';
 import type { Enemy } from '../../types';
+import { boilOn, isCuphead } from '../style-ctx';
+import {
+  drawBomberInk,
+  drawChargerInk,
+  drawFlyerInk,
+  drawFoeInk,
+  drawMortarInk,
+  drawSpitterInk,
+  drawTurretInk,
+} from './cuphead/enemies';
 import { rect } from './util';
 
 /** A flying "Drone": teal body with rotor blur and a single eye. */
 export function drawFlyer(ctx: CanvasRenderingContext2D, e: Enemy, frame: number): void {
+  if (isCuphead()) return drawFlyerInk(ctx, e, frame, boilOn());
   const { x, y, w, h } = e;
   // rotor blur on top
   const spin = (frame % 6) < 3 ? 1 : -1;
@@ -25,6 +36,7 @@ export function drawFlyer(ctx: CanvasRenderingContext2D, e: Enemy, frame: number
 
 /** A stationary "Turret": squat base with a swivelling muzzle. */
 export function drawTurret(ctx: CanvasRenderingContext2D, e: Enemy): void {
+  if (isCuphead()) return drawTurretInk(ctx, e);
   const { x, y, w, h } = e;
   // base
   rect(ctx, x + 2, y + h - 16, w - 4, 16, PALETTE.turretDk);
@@ -40,6 +52,7 @@ export function drawTurret(ctx: CanvasRenderingContext2D, e: Enemy): void {
 
 /** A patrolling "Glitch" enemy with a 2-step walk cycle. */
 export function drawFoe(ctx: CanvasRenderingContext2D, e: Enemy, frame: number): void {
+  if (isCuphead()) return drawFoeInk(ctx, e, frame, boilOn());
   const { x, y, w, h } = e;
   const step = Math.floor(frame / 8) % 2;
   // feet
@@ -63,6 +76,7 @@ export function drawFoe(ctx: CanvasRenderingContext2D, e: Enemy, frame: number):
 
 /** A stationary "Mortar": a squat iron tub with a wide upward barrel. */
 export function drawMortar(ctx: CanvasRenderingContext2D, e: Enemy): void {
+  if (isCuphead()) return drawMortarInk(ctx, e);
   const { x, y, w, h } = e;
   // tub base
   rect(ctx, x + 2, y + h - 20, w - 4, 20, PALETTE.mortarDk);
@@ -80,6 +94,7 @@ export function drawMortar(ctx: CanvasRenderingContext2D, e: Enemy): void {
 
 /** A flying "Bomber": a heavier steel drone with a bomb slung under its belly. */
 export function drawBomber(ctx: CanvasRenderingContext2D, e: Enemy, frame: number): void {
+  if (isCuphead()) return drawBomberInk(ctx, e, frame, boilOn());
   const { x, y, w, h } = e;
   // twin rotor blur
   const spin = (frame % 6) < 3 ? 1 : -1;
@@ -101,6 +116,7 @@ export function drawBomber(ctx: CanvasRenderingContext2D, e: Enemy, frame: numbe
 
 /** A "Charger": a horned brute that glows hot as it winds up to dash. */
 export function drawCharger(ctx: CanvasRenderingContext2D, e: Enemy, frame: number): void {
+  if (isCuphead()) return drawChargerInk(ctx, e, frame, boilOn());
   const { x, y, w, h } = e;
   const facing = e.vx >= 0 ? 1 : -1;
   const winding = e.chargeState === 'wind';
@@ -133,6 +149,7 @@ export function drawCharger(ctx: CanvasRenderingContext2D, e: Enemy, frame: numb
 
 /** A "Spitter": a hot-colored foe with a barrel snout that fires bolts. */
 export function drawSpitter(ctx: CanvasRenderingContext2D, e: Enemy, frame: number): void {
+  if (isCuphead()) return drawSpitterInk(ctx, e, frame, boilOn());
   const { x, y, w, h } = e;
   const step = Math.floor(frame / 8) % 2;
   const facing = e.vx >= 0 ? 1 : -1;

@@ -12,10 +12,13 @@ import {
 import { solid } from '../../game/physics';
 import { themeVisual } from '../themes';
 import type { Crumble, Level, MovingPlatform } from '../../types';
+import { isCuphead } from '../style-ctx';
+import { drawCrumbleInk, drawMoverInk, drawTileInk } from './cuphead/tiles';
 import { rect } from './util';
 
 /** Draw a single solid tile (themed ground with cap, or brick/stone platform). */
 export function drawTile(ctx: CanvasRenderingContext2D, level: Level, c: number, r: number): void {
+  if (isCuphead()) return drawTileInk(ctx, level, c, r);
   const t = level.grid[r][c];
   const skin = themeVisual(level.theme).tiles;
   if (t === TILE_GROUND) {
@@ -74,6 +77,7 @@ function drawQBlock(ctx: CanvasRenderingContext2D, c: number, r: number, pow: bo
 
 /** A crumbling platform: cracked slab; jitters when armed, fades while falling. */
 export function drawCrumble(ctx: CanvasRenderingContext2D, c: Crumble, frame: number): void {
+  if (isCuphead()) return drawCrumbleInk(ctx, c, frame);
   ctx.save();
   let { x } = c;
   if (c.timer >= 0 && !c.falling) x += ((frame % 2) * 2 - 1) * 1.5; // pre-fall jitter
@@ -90,6 +94,7 @@ export function drawCrumble(ctx: CanvasRenderingContext2D, c: Crumble, frame: nu
 
 /** A metal moving platform: bevelled slab with bolts, to read as mechanical. */
 export function drawMover(ctx: CanvasRenderingContext2D, m: MovingPlatform): void {
+  if (isCuphead()) return drawMoverInk(ctx, m);
   const { x, y, w, h } = m;
   rect(ctx, x, y, w, h, '#5a6b7a');
   rect(ctx, x, y, w, 6, '#7d909e');

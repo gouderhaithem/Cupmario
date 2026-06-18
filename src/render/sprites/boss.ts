@@ -5,6 +5,8 @@
 
 import { TILE } from '../../game/constants';
 import type { Boss, BossSkin } from '../../types';
+import { boilOn, isCuphead } from '../style-ctx';
+import { drawBossInk } from './cuphead/boss';
 import { rect } from './util';
 
 /** Filled triangle helper (for roots, shards, spikes). */
@@ -223,6 +225,7 @@ function drawCrystal(
  * `boss.skin`; `boss.shape` swaps the whole silhouette.
  */
 export function drawBoss(ctx: CanvasRenderingContext2D, boss: Boss, frame: number): void {
+  if (isCuphead()) return drawBossInk(ctx, boss, frame, boilOn());
   const x = boss.x;
   const y = boss.y;
   const { w, h, shape } = boss;

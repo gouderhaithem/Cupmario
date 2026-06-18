@@ -13,6 +13,14 @@ export type GameMode = 'campaign' | 'bossrush';
  */
 export type Difficulty = 'assist' | 'normal' | 'expert';
 
+/**
+ * Art-direction style. Purely visual — physics, levels, and difficulty are
+ * identical in both. `cuphead` keeps the vintage 1930s-cartoon grade (sepia
+ * wash + vignette + film grain); `mario` strips the post-FX for a clean, bright
+ * pixel look. Chosen at boot via the `?style=` URL param, then remembered.
+ */
+export type Style = 'mario' | 'cuphead';
+
 // Biome themes. Each drives a distinct background (sky/backdrop/celestial) and
 // tile palette via THEMES in render/themes.ts — so levels stop looking alike.
 //   day     — bright meadow (level 1 intro)
@@ -382,7 +390,10 @@ export type PatternName =
  *   lumber  — slow ground walk that tracks Pip, then charge-rolls across (GRANITE, the golem).
  *   stoke   — shuffles side to side around its center (RIME, the ice spire).
  */
-export type BossMoveMode = 'planted' | 'lumber' | 'stoke';
+export type BossMoveMode = 'planted' | 'lumber' | 'stoke' | 'hop';
+
+/** Which side of the arena a boss makes its home (defaults to center). */
+export type BossSide = 'center' | 'left' | 'right';
 
 /**
  * A timed arena hazard during a boss fight (root pillars / electrified floor).
@@ -440,8 +451,12 @@ export interface BossConfig {
   /** Floating brick platforms in the arena: [row, startCol, length]. */
   floorPlats: Array<[number, number, number]>;
   phases: BossPhase[];
-  /** Movement style (defaults to 'hover'). Each boss feels distinct. */
+  /** Movement style (defaults to 'planted'). Each boss feels distinct. */
   moveMode?: BossMoveMode;
+  /** Body-size multiplier over the base BOSS_W/BOSS_H (defaults to 1). */
+  scale?: number;
+  /** Where the boss anchors in the arena (defaults to 'center'). */
+  homeSide?: BossSide;
   /** Per-boss bolt color so each fight's fire reads as that character. */
   boltTint?: string;
   boltTintHi?: string;
@@ -489,8 +504,12 @@ export interface Boss {
   hurtFlash: number;
   /** True once HP hits 0 (KO sequence playing). */
   dead: boolean;
-  /** Movement style this fight (planted / lumber / stoke). */
+  /** Movement style this fight (planted / lumber / stoke / hop). */
   moveMode: BossMoveMode;
+  /** Vertical velocity while hopping (px/frame; 0 when grounded). */
+  vy: number;
+  /** Frames until the next hop launches (hop move mode). */
+  jumpCd: number;
   /** Per-boss bolt color (passed onto fired bolts). */
   boltTint?: string;
   boltTintHi?: string;

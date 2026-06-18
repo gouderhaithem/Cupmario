@@ -9,6 +9,10 @@ import {
   BOSS_BOB_SPEED,
   BOSS_BOLT_DAMAGE,
   BOSS_DASH_SPEED,
+  BOSS_HOP_CD,
+  BOSS_HOP_GRAVITY,
+  BOSS_HOP_V,
+  BOSS_SIDE_MARGIN,
   BOSS_SHAPES,
   BOSS_SKINS,
   BOSS_EX_DAMAGE,
@@ -32,16 +36,26 @@ import { telegraphFrames } from './difficulty';
 import { bossDefeated, hitPlayer } from './flow';
 import { runPattern } from './patterns';
 import type { GameState } from './state';
-import type { Boss, BossConfig, Level } from '../types';
+import type { Boss, BossConfig, BossSide, Level } from '../types';
 
 const KO_POP_LIFE = 60;
+
+/** Anchor X for a boss given its preferred side and body width. */
+function homeForSide(level: Level, w: number, side: BossSide): number {
+  if (side === 'right') return level.worldW - TILE - BOSS_SIDE_MARGIN - w;
+  if (side === 'left') return TILE + BOSS_SIDE_MARGIN;
+  return level.worldW / 2 - w / 2;
+}
 
 /** Build the live boss for an arena. Every boss now stands on the floor. */
 export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
   const moveMode = cfg.moveMode ?? 'planted';
+  // Per-boss body size (some bosses loom larger than the base box).
+  const w = Math.round(BOSS_W * (cfg.scale ?? 1));
+  const h = Math.round(BOSS_H * (cfg.scale ?? 1));
   // All bosses are grounded: the box bottom rests on the floor (row 10).
-  const homeY = 10 * TILE - BOSS_H;
-  const homeX = level.worldW / 2 - BOSS_W / 2;
+  const homeY = 10 * TILE - h;
+  const homeX = homeForSide(level, w, cfg.homeSide ?? 'center');
   const skin = BOSS_SKINS[Math.min(index, BOSS_SKINS.length - 1)];
   const shape = BOSS_SHAPES[Math.min(index, BOSS_SHAPES.length - 1)];
   return {
@@ -50,8 +64,8 @@ export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
     shape,
     x: homeX,
     y: homeY,
-    w: BOSS_W,
-    h: BOSS_H,
+    w,
+    h,
     hp: cfg.hp,
     maxHp: cfg.hp,
     phase: 0,
@@ -73,6 +87,8 @@ export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
     boltTintHi: cfg.boltTintHi,
     swayT: 0,
     spiralA: 0,
+    vy: 0,
+    jumpCd: BOSS_HOP_CD,
   };
 }
 
@@ -93,6 +109,8 @@ export function resetBoss(boss: Boss): void {
   boss.dead = false;
   boss.swayT = 0;
   boss.spiralA = 0;
+  boss.vy = 0;
+  boss.jumpCd = BOSS_HOP_CD;
 }
 
 /** Apply `dmg` to the boss from an external source (e.g. MEGABLAST). */
@@ -133,7 +151,34 @@ function arenaBounds(state: GameState, boss: Boss): { left: number; right: numbe
 function moveBoss(state: GameState, boss: Boss): void {
   if (boss.moveMode === 'lumber') return moveLumber(state, boss);
   if (boss.moveMode === 'stoke') return moveStoke(state, boss);
+  if (boss.moveMode === 'hop') return moveHop(state, boss);
   movePlanted(state, boss);
+}
+
+/**
+ * BARKBROOD (tree): roots itself on one side of the arena and springs straight
+ * up on a timer, slamming back down. Anchored horizontally at homeX — the hop is
+ * purely vertical, so the canopy stays in its corner while the trunk leaps.
+ */
+function moveHop(state: GameState, boss: Boss): void {
+  boss.swayT += SWAY_SPEED;
+  boss.x = boss.homeX;
+  if (boss.vy !== 0 || boss.y < boss.homeY) {
+    // Airborne: integrate gravity, then land (with a thud) on the floor.
+    boss.vy += BOSS_HOP_GRAVITY;
+    boss.y += boss.vy;
+    if (boss.y >= boss.homeY) {
+      boss.y = boss.homeY;
+      boss.vy = 0;
+      boss.jumpCd = BOSS_HOP_CD;
+      shakeScreen(state, SHAKE_STOMP);
+    }
+  } else if (boss.jumpCd > 0) {
+    boss.jumpCd -= 1;
+  } else {
+    boss.vy = BOSS_HOP_V;
+    sfx('jump');
+  }
 }
 
 /**

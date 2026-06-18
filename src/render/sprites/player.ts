@@ -2,6 +2,8 @@
 
 import { PALETTE } from '../../game/constants';
 import type { Player, Skin } from '../../types';
+import { boilOn, isCuphead } from '../style-ctx';
+import { drawPipInk } from './cuphead/player';
 import { rect } from './util';
 
 /** Pip, drawn in the current level's skin, with walk/jump/crouch poses. */
@@ -9,6 +11,10 @@ import { rect } from './util';
 const ART_H = 58;
 
 export function drawPip(ctx: CanvasRenderingContext2D, p: Player, skin: Skin, frame: number): void {
+  if (isCuphead()) {
+    drawPipInk(ctx, p, skin, frame, boilOn());
+    return;
+  }
   const { x, w, h, face } = p;
   const feet = p.y + h;
 

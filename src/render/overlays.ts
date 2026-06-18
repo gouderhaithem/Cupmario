@@ -28,6 +28,7 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
     `VOLUME:  ${'█'.repeat(Math.round(state.volume * 10))}${'·'.repeat(10 - Math.round(state.volume * 10))}`,
     `REDUCED MOTION:  ${state.reducedMotion ? 'ON' : 'OFF'}`,
     `TOUCH CONTROLS:  ${state.showTouchControls ? 'ON' : 'OFF'}`,
+    `STYLE:  ${state.style === 'cuphead' ? 'CUPHEAD' : 'MARIO'}`,
     'QUIT TO TITLE',
   ];
   ctx.font = "14px 'Press Start 2P', monospace";
@@ -47,6 +48,59 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
   ctx.font = "10px 'Press Start 2P', monospace";
   ctx.fillStyle = '#8a84a8';
   ctx.fillText('↑ ↓  MOVE     ← →  ADJUST     SPACE  SELECT     ESC  RESUME', VIEW_W / 2, VIEW_H - 40);
+  ctx.restore();
+}
+
+/**
+ * Warm 1930s-film grade for the cuphead style: a static soft-light sepia wash.
+ * Static (no per-frame flicker), so it runs even under reduced motion — only
+ * the grain in {@link drawVintage} is suppressed there. The mario style skips
+ * this entirely, leaving the bright theme palette untouched.
+ */
+export function drawSepiaGrade(ctx: CanvasRenderingContext2D): void {
+  ctx.save();
+  // A light aged-film cast — NOT a full desaturate. The rubber-hose sprites and
+  // paper backdrop already carry the vintage palette, so a heavy wash here just
+  // muddies the ink + hand-drawn colors. A gentle 'color' nudge toward sepia
+  // plus a faint 'multiply' warms the frame while letting the art read.
+  // A warm 'multiply' tints toward old paper while KEEPING hue (so Pip's blue,
+  // grass green, foe purple all survive); a faint 'overlay' cream lifts the
+  // highlights for a sun-bleached look. No 'color' pass — that drained the art.
+  // A 'saturation' lift first so the hand-drawn colors read VIVID (Cuphead is
+  // bold, not muddy); then a light warm 'multiply' for the aged-film cast and an
+  // 'overlay' cream to sun-bleach the highlights. Keeping the multiply gentle is
+  // what stops the frame collapsing into a flat tan wash.
+  ctx.globalCompositeOperation = 'saturation';
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = '#ff5a2a';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = '#c79a52';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = '#fff4d6';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.restore();
+}
+
+/**
+ * Clean, vivid grade for the mario style: a saturation + contrast pop with no
+ * vignette or grain, so the bright theme palette reads as crisp modern pixel
+ * art — the deliberate opposite of {@link drawSepiaGrade}.
+ */
+export function drawCleanGrade(ctx: CanvasRenderingContext2D): void {
+  ctx.save();
+  // 'saturation' lifts color intensity; 'overlay' adds punchy contrast.
+  ctx.globalCompositeOperation = 'saturation';
+  ctx.globalAlpha = 0.45;
+  ctx.fillStyle = '#ff3b3b'; // a fully-saturated source pushes the frame vivid
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = '#bfe6ff'; // cool, bright highlight lift
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.restore();
 }
 

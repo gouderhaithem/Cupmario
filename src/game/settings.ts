@@ -3,7 +3,7 @@
 // applying them lives in flow.
 
 import { BEST_KEY, SHOW_TOUCH_CONTROLS } from './constants';
-import type { Difficulty } from '../types';
+import type { Difficulty, Style } from '../types';
 
 export interface Settings {
   /** Difficulty tier: assist / normal / expert (see flow/grade/projectile/boss). */
@@ -14,6 +14,8 @@ export interface Settings {
   reducedMotion: boolean;
   /** Show the on-screen touch arrows + action buttons. */
   showTouchControls: boolean;
+  /** Art-direction style (cuphead vintage vs mario clean). Visual only. */
+  style: Style;
 }
 
 const ASSIST_KEY = `${BEST_KEY}-assist`; // legacy boolean, migrated to difficulty
@@ -21,11 +23,36 @@ const DIFFICULTY_KEY = `${BEST_KEY}-difficulty`;
 const VOLUME_KEY = `${BEST_KEY}-volume`;
 const REDUCED_MOTION_KEY = `${BEST_KEY}-reduced-motion`;
 const TOUCH_CONTROLS_KEY = `${BEST_KEY}-touch-controls`;
+const STYLE_KEY = `${BEST_KEY}-style`;
+
+/** Default look when nothing is stored or in the URL — keeps the vintage grade. */
+const DEFAULT_STYLE: Style = 'cuphead';
 
 const DIFFICULTIES: readonly Difficulty[] = ['assist', 'normal', 'expert'];
+const STYLES: readonly Style[] = ['mario', 'cuphead'];
 
 function isDifficulty(v: string | null): v is Difficulty {
   return v !== null && (DIFFICULTIES as readonly string[]).includes(v);
+}
+
+function isStyle(v: string | null): v is Style {
+  return v !== null && (STYLES as readonly string[]).includes(v);
+}
+
+/**
+ * Resolve the art style: an explicit `?style=` URL param wins (and is remembered
+ * for next time), otherwise the stored choice, otherwise {@link DEFAULT_STYLE}.
+ */
+function resolveStyle(): Style {
+  let style: Style = DEFAULT_STYLE;
+  const stored = localStorage.getItem(STYLE_KEY);
+  if (isStyle(stored)) style = stored;
+  const fromUrl = new URLSearchParams(window.location.search).get('style');
+  if (isStyle(fromUrl)) {
+    style = fromUrl;
+    localStorage.setItem(STYLE_KEY, fromUrl); // URL param + remember
+  }
+  return style;
 }
 
 export function loadSettings(): Settings {
@@ -33,6 +60,7 @@ export function loadSettings(): Settings {
   let volume = 0.5;
   let reducedMotion = false;
   let showTouchControls = SHOW_TOUCH_CONTROLS;
+  let style: Style = DEFAULT_STYLE;
   try {
     const stored = localStorage.getItem(DIFFICULTY_KEY);
     if (isDifficulty(stored)) {
@@ -45,10 +73,11 @@ export function loadSettings(): Settings {
     reducedMotion = localStorage.getItem(REDUCED_MOTION_KEY) === '1';
     const t = localStorage.getItem(TOUCH_CONTROLS_KEY);
     if (t !== null) showTouchControls = t === '1'; // unset → keep the constant default
+    style = resolveStyle();
   } catch {
     /* ignore storage errors */
   }
-  return { difficulty, volume, reducedMotion, showTouchControls };
+  return { difficulty, volume, reducedMotion, showTouchControls, style };
 }
 
 export function saveSettings(s: Settings): void {
@@ -57,6 +86,7 @@ export function saveSettings(s: Settings): void {
     localStorage.setItem(VOLUME_KEY, String(s.volume));
     localStorage.setItem(REDUCED_MOTION_KEY, s.reducedMotion ? '1' : '0');
     localStorage.setItem(TOUCH_CONTROLS_KEY, s.showTouchControls ? '1' : '0');
+    localStorage.setItem(STYLE_KEY, s.style);
   } catch {
     /* ignore storage errors */
   }
