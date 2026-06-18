@@ -2,6 +2,7 @@
 
 import { sfx } from '../engine/audio';
 import { COIN_SCORE, PALETTE } from './constants';
+import { spawnCoinSparkle } from './sparkle';
 import type { GameState } from './state';
 
 const PICKUP_X = 26;
@@ -20,6 +21,7 @@ export function updateCoins(state: GameState): void {
       state.coins += 1;
       state.score += COIN_SCORE;
       sfx('coin');
+      spawnCoinSparkle(state, co.cx, co.cy);
       state.pops.push({ x: co.cx, y: co.cy, life: POP_LIFE, text: '+100', color: PALETTE.coin });
     }
   }

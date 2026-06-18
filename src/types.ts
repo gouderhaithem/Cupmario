@@ -339,6 +339,14 @@ export interface Player {
   /** Landing-impact squash (0 = none … 1 = hard landing); decays each frame and
    *  drives the render-only squash-and-stretch. */
   landSquash: number;
+  /** True while hugging a wall in mid-air (slow controlled descent). */
+  wallSlide: boolean;
+  /** Side the clung wall is on while sliding: -1 left, +1 right, 0 none. */
+  wallDir: -1 | 0 | 1;
+  /** Frames a wall jump stays available after leaving the wall (wall coyote). */
+  wallCoyote: number;
+  /** True once the single mid-air dash is spent; refreshed by landing or a wall cling. */
+  airDashUsed: boolean;
 }
 
 export interface Keys {
@@ -380,6 +388,22 @@ export interface Puff {
   max: number;
   /** Base radius in px. */
   r: number;
+}
+
+/** A short-lived bright twinkle (coin pickup burst, drawn as a 4-point spark). */
+export interface Sparkle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Remaining life in frames. */
+  life: number;
+  /** Initial life, so the draw can fade + shrink over the lifetime. */
+  max: number;
+  /** Half-extent in px of the twinkle cross. */
+  size: number;
+  /** Core color. */
+  color: string;
 }
 
 // ---- Boss fight ----

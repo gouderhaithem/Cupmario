@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { solid, collideX, collideY } from './physics';
 import { buildLevel } from './level';
-import { COLS, ROWS, TILE, PLAYER_H, PLAYER_W } from './constants';
+import { COLS, ROWS, TILE, PLAYER_H, PLAYER_W, CORNER_NUDGE } from './constants';
 import type { Player } from '../types';
 
 const level = buildLevel({
@@ -31,6 +31,10 @@ function player(over: Partial<Player> = {}): Player {
     dashCd: 0,
     dashDir: 1,
     landSquash: 0,
+    wallSlide: false,
+    wallDir: 0,
+    wallCoyote: 0,
+    airDashUsed: false,
     ...over,
   };
 }
@@ -62,6 +66,41 @@ describe('collideY', () => {
     p.y += p.vy;
     collideY(level, p);
     expect(p.onGround).toBe(false);
+  });
+});
+
+describe('collideY corner correction', () => {
+  // A single ceiling brick at row 4, col 7. Its left edge is at x = 7*TILE.
+  const ceiling = buildLevel({
+    theme: 'day',
+    flagCol: 20,
+    pits: [],
+    plats: [[4, 7, 1]],
+    coins: [],
+    enemyCols: [],
+  });
+  const headRow = 4;
+
+  it('nudges Pip sideways past a small corner clip and keeps the jump alive', () => {
+    // Pip's right edge pokes a few px under the brick's left corner.
+    const clip = 3;
+    const p = player({ x: 7 * TILE - PLAYER_W + clip, y: (headRow + 1) * TILE, vy: -8 });
+    p.y += p.vy; // rise into the brick's row
+    collideY(ceiling, p);
+    expect(p.vy).toBe(-8); // jump preserved
+    expect(p.x).toBeLessThanOrEqual(7 * TILE - PLAYER_W); // shoved clear of the corner
+    expect(p.x).toBeGreaterThanOrEqual(7 * TILE - PLAYER_W - CORNER_NUDGE);
+  });
+
+  it('stops a square hit (centred under the brick) so it can still be bumped', () => {
+    // Pip mostly under the brick — far more overlap than the nudge can clear.
+    const p = player({ x: 7 * TILE, y: (headRow + 1) * TILE, vy: -8 });
+    const startX = p.x;
+    p.y += p.vy;
+    collideY(ceiling, p);
+    expect(p.vy).toBe(0); // blocked
+    expect(p.x).toBe(startX); // no nudge
+    expect(p.y).toBe((headRow + 1) * TILE); // snapped below the brick
   });
 });
 

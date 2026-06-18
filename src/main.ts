@@ -21,6 +21,7 @@ import { updateOrbs } from './game/orbs';
 import { tryParry } from './game/parry';
 import { updatePlayer } from './game/player';
 import { updatePuffs } from './game/puff';
+import { updateSparkles } from './game/sparkle';
 import { updateProjectiles } from './game/projectile';
 import { updateSuper } from './game/super';
 import { createState } from './game/state';
@@ -91,6 +92,7 @@ function main(): void {
     }
 
     updatePuffs(state); // advance + fade dust clouds
+    updateSparkles(state); // advance + fade coin twinkles
     updateCamera(state); // clamps to 0 in the tight arena
   };
 
@@ -101,6 +103,8 @@ function main(): void {
 
     // Settle the screen shake every tick, even while frozen.
     decayShake(state);
+    // Fade the combo banner alongside the shake (same cosmetic cadence).
+    if (state.comboFlash > 0) state.comboFlash -= 1;
 
     // Impact freeze: hold gameplay still for a few frames after a stomp.
     if (state.hitstop > 0) {
@@ -150,6 +154,7 @@ function main(): void {
     }
 
     updatePuffs(state); // advance + fade dust clouds
+    updateSparkles(state); // advance + fade coin twinkles
     updateCamera(state);
   };
 

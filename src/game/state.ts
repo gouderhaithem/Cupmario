@@ -1,7 +1,7 @@
 // The single GameState object. All systems read/write through it; render.ts
 // only reads. Per-frame mutation here is intentional (see CLAUDE.md rules 4-5).
 
-import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Puff, Projectile, Screen, Style, WeaponId } from '../types';
+import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Puff, Projectile, Screen, Sparkle, Style, WeaponId } from '../types';
 import { ASSIST_BONUS_HP, BEST_KEY, LEVEL_TIME, MAX_HP, PLAYER_H, PLAYER_W, START_LIVES } from './constants';
 import { buildLevel, spawnCheckpoints, spawnCrumbles, spawnEnemies, spawnMovers, spawnOrbs } from './level';
 import { LEVELS } from './levels';
@@ -37,6 +37,8 @@ export interface GameState {
   pops: Pop[];
   /** Transient dust-cloud particles from landing / dashing / jumping (FX only). */
   puffs: Puff[];
+  /** Transient bright twinkles from coin pickups (FX only). */
+  sparks: Sparkle[];
 
   score: number;
   coins: number;
@@ -52,6 +54,8 @@ export interface GameState {
   coyote: number;
   /** Frames a recent jump press stays buffered, waiting for ground/coyote. */
   jumpBuffer: number;
+  /** Frames horizontal input is suppressed after a wall jump (preserves push-off). */
+  wallJumpLock: number;
   /** True between jump liftoff and apex; gates variable-height jump-cut. */
   jumping: boolean;
   /** Current screen-shake magnitude in px; decays to 0 each tick. */
@@ -112,6 +116,10 @@ export interface GameState {
 
   /** Stomp-chain combo: consecutive stomps without landing (0 = none). */
   combo: number;
+  /** Frames left on the "COMBO ×N" banner (counts down; 0 = hidden). */
+  comboFlash: number;
+  /** Chain length the banner is showing (frozen when the banner fires). */
+  comboShown: number;
   /** Per-level time budget in frames; leftover converts to a clear bonus. */
   timeLeft: number;
   /** Boss "READY?/FIGHT!" intro hold (frames); boss waits to attack while > 0. */
@@ -174,6 +182,10 @@ export function spawnPlayer(level: Level, maxHp: number = MAX_HP): Player {
     dashCd: 0,
     dashDir: 1,
     landSquash: 0,
+    wallSlide: false,
+    wallDir: 0,
+    wallCoyote: 0,
+    airDashUsed: false,
   };
 }
 
@@ -202,6 +214,7 @@ export function createState(): GameState {
     keys: makeKeys(),
     pops: [],
     puffs: [],
+    sparks: [],
     score: 0,
     coins: 0,
     lives: START_LIVES,
@@ -211,6 +224,7 @@ export function createState(): GameState {
     jumpLatch: false,
     coyote: 0,
     jumpBuffer: 0,
+    wallJumpLock: 0,
     jumping: false,
     shake: 0,
     hitstop: 0,
@@ -239,6 +253,8 @@ export function createState(): GameState {
     lastTime: 0,
     bestTime: 0,
     combo: 0,
+    comboFlash: 0,
+    comboShown: 0,
     timeLeft: LEVEL_TIME,
     bossIntro: 0,
     clearTitle: '',
@@ -272,10 +288,12 @@ export function loadLevel(state: GameState, levelIndex: number): void {
   state.projectiles = [];
   state.pops = [];
   state.puffs = [];
+  state.sparks = [];
   state.keys = makeKeys();
   state.jumpLatch = false;
   state.coyote = 0;
   state.jumpBuffer = 0;
+  state.wallJumpLock = 0;
   state.jumping = false;
   state.shake = 0;
   state.hitstop = 0;

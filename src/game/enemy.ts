@@ -35,6 +35,7 @@ import {
   SHOOTER_SCORE,
   STOMP_BOUNCE,
   STOMP_COMBO_CAP,
+  COMBO_FLASH_FRAMES,
   STOMP_SCORE,
   TILE,
   TURRET_BURST,
@@ -58,7 +59,7 @@ const POP_LIFE = 36;
  * Kill an enemy: score it (×`mult` for stomp chains), shake/sfx, float a "+score"
  * pop, and — for a Spitter — drop a power mushroom. Shared by stomp + bolt paths.
  */
-export function killEnemy(state: GameState, e: Enemy, mult = 1): void {
+export function killEnemy(state: GameState, e: Enemy, mult = 1, pitchStep = 0): void {
   e.alive = false;
   let gain = STOMP_SCORE;
   if (e.kind === 'shooter') {
@@ -76,7 +77,7 @@ export function killEnemy(state: GameState, e: Enemy, mult = 1): void {
   gain = Math.round(gain * mult);
   state.score += gain;
   shakeScreen(state, SHAKE_STOMP);
-  sfx('stomp');
+  sfx('stomp', pitchStep);
   const text = mult > 1 ? `+${gain} x${mult}` : `+${gain}`;
   state.pops.push({
     x: e.x + e.w / 2,
@@ -278,7 +279,13 @@ export function updateEnemies(state: GameState): boolean {
     const fromTop = p.y + p.h - e.y < STOMP_TOP && p.vy > 0;
     if (fromTop) {
       state.combo = Math.min(state.combo + 1, STOMP_COMBO_CAP);
-      killEnemy(state, e, 2 ** (state.combo - 1));
+      // A real chain (≥2) fires the "COMBO ×N" banner; the stomp pitch climbs a
+      // few semitones per link so a chain audibly escalates.
+      if (state.combo >= 2) {
+        state.comboFlash = COMBO_FLASH_FRAMES;
+        state.comboShown = state.combo;
+      }
+      killEnemy(state, e, 2 ** (state.combo - 1), state.combo - 1);
       p.vy = STOMP_BOUNCE;
       hitStop(state, HITSTOP_STOMP);
     } else if (p.hurt <= 0) {

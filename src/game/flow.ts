@@ -196,6 +196,7 @@ export function loseLife(state: GameState): void {
   state.shootCd = 0;
   state.dashLatch = false;
   state.combo = 0;
+  state.comboFlash = 0;
 }
 
 /**

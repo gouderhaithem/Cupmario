@@ -1,7 +1,7 @@
 // Top-level draw(): background -> tiles -> coins -> mushrooms -> enemies ->
 // bolts -> flag -> player -> score pops. Reads state only (golden rule #4).
 
-import { BOSS_HURT_FLASH, COLS, FLASH_FRAMES, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
+import { BOSS_HURT_FLASH, COLS, COMBO_FLASH_FRAMES, FLASH_FRAMES, PALETTE, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
 import type { GameState } from '../game/state';
 import { isCuphead, setRenderStyle } from './style-ctx';
 import { INK } from './ink';
@@ -183,6 +183,21 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     ctx.restore();
   }
 
+  // Coin-pickup sparkles: bright 4-point twinkles that shrink and fade out.
+  for (const sp of state.sparks) {
+    if (sp.x < camX - 20 || sp.x > camX + VIEW_W + 20) continue;
+    const t = Math.max(0, sp.life / sp.max);
+    const r = sp.size * (0.4 + t);
+    ctx.save();
+    ctx.globalAlpha = t;
+    ctx.fillStyle = sp.color;
+    ctx.translate(sp.x, sp.y);
+    ctx.fillRect(-r, -r * 0.28, r * 2, r * 0.56);
+    ctx.fillRect(-r * 0.28, -r, r * 0.56, r * 2);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
   // Player (flash while invulnerable).
   const p = state.player;
   if (!(p.hurt > 0 && frame % 8 < 4)) {
@@ -201,6 +216,30 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
   }
   ctx.globalAlpha = 1;
   ctx.textAlign = 'left';
+
+  // Combo banner: a bold "COMBO ×N" that pops in over Pip and floats up as the
+  // stomp chain climbs. Lives in the world layer so it tracks the action.
+  if (state.comboFlash > 0 && state.comboShown >= 2) {
+    const t = state.comboFlash / COMBO_FLASH_FRAMES; // 1 → 0
+    const e = 1 - t; // elapsed 0 → 1
+    const scale = e < 0.25 ? 0.6 + (e / 0.25) * 0.6 : 1.2 - Math.min(1, (e - 0.25) / 0.75) * 0.2;
+    const bx = p.x + p.w / 2;
+    const by = p.y - 18 - e * 16;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t * 2);
+    ctx.translate(bx, by);
+    ctx.scale(scale, scale);
+    ctx.textAlign = 'center';
+    ctx.font = "16px 'Press Start 2P', monospace";
+    const label = `COMBO x${state.comboShown}`;
+    ctx.fillStyle = '#11112a';
+    ctx.fillText(label, 2, 2);
+    ctx.fillStyle = PALETTE.combo;
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+  }
 
   ctx.restore();
 

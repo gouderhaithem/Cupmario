@@ -61,6 +61,34 @@ export function spawnDashDust(state: GameState, cx: number, feetY: number, dir: 
   }
 }
 
+/** A wisp of friction dust at the wall contact, drifting up and off the wall. */
+export function spawnWallDust(state: GameState, x: number, y: number, wallDir: number): void {
+  add(state, {
+    x,
+    y,
+    vx: -wallDir * (0.4 + Math.random() * 0.8),
+    vy: -(0.4 + Math.random() * 0.8),
+    life: 10 + ((Math.random() * 5) | 0),
+    max: 16,
+    r: 2 + Math.random() * 2,
+  });
+}
+
+/** A low backward spray of dust as Pip skids to reverse direction at speed. */
+export function spawnSkidDust(state: GameState, cx: number, feetY: number, slideDir: number): void {
+  for (let i = 0; i < 2; i++) {
+    add(state, {
+      x: cx - slideDir * (2 + i * 4),
+      y: feetY - 2,
+      vx: -slideDir * (1.2 + Math.random() * 1.4),
+      vy: -(0.2 + Math.random() * 0.5),
+      life: 10 + ((Math.random() * 5) | 0),
+      max: 16,
+      r: 2.5 + Math.random() * 2.5,
+    });
+  }
+}
+
 /** A small symmetric kick of dust as Pip leaves the ground. */
 export function spawnJumpDust(state: GameState, cx: number, feetY: number): void {
   for (let i = 0; i < 4; i++) {

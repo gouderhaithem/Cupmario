@@ -6,7 +6,7 @@
 import { PALETTE } from '../../../game/constants';
 import type { Player, Skin } from '../../../types';
 import { INK, boilOffset, inkEllipse, inkHose, inkRoundRect, inkShadow, pieEye, softHi } from '../../ink';
-import { playerSquash } from '../squash';
+import { playerSquash, skidLean } from '../squash';
 
 /** Hand-drawn art height; a shorter hitbox squashes the whole figure to fit. */
 const ART_H = 58;
@@ -43,8 +43,10 @@ export function drawPipInk(
   // then layer the velocity-driven squash-and-stretch about the feet-centre.
   const cx = x + w / 2;
   const sq = playerSquash(p, frame);
+  const lean = skidLean(p);
   ctx.save();
   ctx.translate(cx, feet);
+  if (lean) ctx.rotate(lean); // tilt the whole figure about the feet while skidding
   ctx.scale(sq.sx, sq.sy);
   if (h !== ART_H) ctx.scale(1, h / ART_H);
   ctx.translate(-cx, -ART_H);

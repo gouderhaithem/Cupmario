@@ -22,6 +22,10 @@ function player(over: Partial<Player> = {}): Player {
     dashCd: 0,
     dashDir: 1,
     landSquash: 0,
+    wallSlide: false,
+    wallDir: 0,
+    wallCoyote: 0,
+    airDashUsed: false,
     ...over,
   };
 }

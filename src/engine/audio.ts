@@ -66,9 +66,11 @@ function beep(freq: number, dur: number, type: OscillatorType, vol: number, when
   o.stop(t + dur + 0.03);
 }
 
-export function sfx(name: SfxName): void {
+export function sfx(name: SfxName, step = 0): void {
   if (!actx) return;
   if (actx.state === 'suspended') void actx.resume();
+  // Pitch shift in 3-semitone steps (used by the stomp combo ramp; 0 = base).
+  const k = step > 0 ? Math.pow(2, (step * 3) / 12) : 1;
   switch (name) {
     case 'jump':
       beep(440, 0.12, 'square', 0.2);
@@ -79,8 +81,8 @@ export function sfx(name: SfxName): void {
       beep(1319, 0.13, 'square', 0.15, 0.06);
       break;
     case 'stomp':
-      beep(220, 0.09, 'square', 0.22);
-      beep(110, 0.16, 'square', 0.18, 0.05);
+      beep(220 * k, 0.09, 'square', 0.22);
+      beep(110 * k, 0.16, 'square', 0.18, 0.05);
       break;
     case 'die':
       beep(392, 0.14, 'sawtooth', 0.2);

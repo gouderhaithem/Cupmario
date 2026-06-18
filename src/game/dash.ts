@@ -14,6 +14,10 @@ export function updateDash(state: GameState): void {
 
   if (p.dashCd > 0) p.dashCd -= 1;
 
+  // Refresh the single air-dash whenever Pip is grounded or clinging a wall, so
+  // a wall cling re-arms the dodge (a dash → wall-jump → dash chain stays open).
+  if (p.onGround || p.wallSlide) p.airDashUsed = false;
+
   // A dash fires on a fresh dash-key press (rising edge) or a left/right
   // double-tap pulse. Track the key latch independently so holding the key
   // still yields one dash, and consume the one-shot tap request each tick.
@@ -22,10 +26,14 @@ export function updateDash(state: GameState): void {
   const tapPress = state.dashTap;
   state.dashTap = false;
 
-  if ((keyPress || tapPress) && p.dashFrames <= 0 && p.dashCd <= 0) {
+  // In the air Pip gets exactly one dash until he lands or grabs a wall; on the
+  // ground it's only gated by the cooldown.
+  const canDash = p.onGround || !p.airDashUsed;
+  if ((keyPress || tapPress) && p.dashFrames <= 0 && p.dashCd <= 0 && canDash) {
     p.dashFrames = DASH_FRAMES;
     p.dashDir = p.face;
     p.dashCd = DASH_CD;
+    if (!p.onGround) p.airDashUsed = true; // spend the mid-air dash
     // Grant i-frames via the shared invulnerability counter (collisions test
     // `hurt <= 0`), so a dash punches through bolts and enemies cleanly.
     p.hurt = Math.max(p.hurt, DASH_IFRAMES);

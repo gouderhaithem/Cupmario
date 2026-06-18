@@ -4,7 +4,7 @@ import { PALETTE } from '../../game/constants';
 import type { Player, Skin } from '../../types';
 import { boilOn, isCuphead } from '../style-ctx';
 import { drawPipInk } from './cuphead/player';
-import { playerSquash } from './squash';
+import { playerSquash, skidLean } from './squash';
 import { rect } from './util';
 
 /** Pip, drawn in the current level's skin, with walk/jump/crouch poses. */
@@ -40,8 +40,10 @@ export function drawPip(ctx: CanvasRenderingContext2D, p: Player, skin: Skin, fr
   // then layer the velocity-driven squash-and-stretch about the feet-centre.
   const cx = x + w / 2;
   const sq = playerSquash(p, frame);
+  const lean = skidLean(p);
   ctx.save();
   ctx.translate(cx, feet);
+  if (lean) ctx.rotate(lean); // tilt the whole figure about the feet while skidding
   ctx.scale(sq.sx, sq.sy);
   if (h !== ART_H) ctx.scale(1, h / ART_H);
   ctx.translate(-cx, -ART_H);

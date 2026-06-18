@@ -22,13 +22,18 @@ import {
   JUMP_CUT_MULT,
   MAXFALL,
   PLAYER_H,
+  SKID_MIN,
   SPEED,
   TILE,
+  WALL_JUMP_H,
+  WALL_JUMP_LOCK,
+  WALL_JUMP_V_MULT,
 } from './constants';
 import { bumpBlocks } from './blocks';
 import { updateDash } from './dash';
+import { updateWall } from './wall';
 import { collideX, collideY, solid } from './physics';
-import { spawnJumpDust, spawnLandDust } from './puff';
+import { spawnJumpDust, spawnLandDust, spawnSkidDust } from './puff';
 import { LAND_DUST_MIN, LAND_SQUASH_DECAY } from './constants';
 import type { GameState } from './state';
 import type { Level, Player, Weapon } from '../types';
@@ -120,7 +125,12 @@ export function updatePlayer(state: GameState): void {
     if (keys.left) dir -= 1;
     if (keys.right) dir += 1;
   }
-  if (dir !== 0) {
+  if (state.wallJumpLock > 0) {
+    // Just wall-jumped: ignore input + friction for a few frames so the away
+    // push-off survives instead of being instantly cancelled by holding toward
+    // the wall.
+    state.wallJumpLock -= 1;
+  } else if (dir !== 0) {
     const target = dir * SPEED * (p.crouch ? CROUCH_SPEED_MULT : 1);
     if (p.vx < target) p.vx = Math.min(target, p.vx + ACCEL);
     else if (p.vx > target) p.vx = Math.max(target, p.vx - ACCEL);
@@ -131,10 +141,18 @@ export function updatePlayer(state: GameState): void {
     p.vx = Math.min(0, p.vx + FRICTION);
   }
 
+  // Skid: turning against fast ground momentum kicks up a backward dust spray
+  // (throttled). The matching body lean is render-only (squash.skidLean).
+  if (p.onGround && dir !== 0 && Math.abs(p.vx) > SKID_MIN && Math.sign(p.vx) === -dir) {
+    if (state.frame % 3 === 0) spawnSkidDust(state, p.x + p.w / 2, p.y + p.h, Math.sign(p.vx));
+  }
+
   // Dash overrides horizontal velocity while active (cancels into a jump).
   updateDash(state);
 
-  // Jump: fire when a buffered press meets available coyote time.
+  // Jump: fire when a buffered press meets available coyote time. A ground jump
+  // takes priority; otherwise a buffered press while clinging (or within the
+  // wall-coyote window) kicks Pip diagonally off the wall.
   if (state.jumpBuffer > 0 && state.coyote > 0 && !keys.lock) {
     p.vy = JUMP;
     p.onGround = false;
@@ -143,11 +161,27 @@ export function updatePlayer(state: GameState): void {
     state.jumping = true;
     spawnJumpDust(state, p.x + p.w / 2, p.y + p.h);
     sfx('jump');
+  } else if (state.jumpBuffer > 0 && (p.wallSlide || p.wallCoyote > 0) && !p.onGround && !keys.lock) {
+    p.vy = JUMP * WALL_JUMP_V_MULT;
+    p.vx = -p.wallDir * WALL_JUMP_H;
+    p.face = p.wallDir > 0 ? -1 : 1; // launch away from the wall
+    state.wallJumpLock = WALL_JUMP_LOCK;
+    state.jumpBuffer = 0;
+    state.jumping = true;
+    p.wallSlide = false;
+    p.wallCoyote = 0;
+    spawnJumpDust(state, p.x + p.w / 2, p.y + p.h);
+    sfx('jump');
   }
 
   // Gravity, clamped.
   p.vy += GRAVITY;
   if (p.vy > MAXFALL) p.vy = MAXFALL;
+
+  // Wall cling: caps descent to a slow slide and arms the wall jump. Runs after
+  // gravity so the slide speed wins over the fall; the wall jump itself was
+  // fired above off the previous frame's cling state.
+  updateWall(state);
 
   // Variable jump height: while still rising from a jump, releasing the button
   // cuts upward velocity once for a short hop. Reaching the apex ends the jump.

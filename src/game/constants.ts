@@ -57,6 +57,28 @@ export const JUMP_BUFFER_FRAMES = 6;
 /** Releasing jump while still rising cuts upward velocity by this factor. */
 export const JUMP_CUT_MULT = 0.5;
 
+// ---- Wall slide + wall jump ----
+/** Capped descent speed (px/frame) while hugging a wall — a slow controlled slide. */
+export const WALL_SLIDE_SPEED = 3;
+/** Frames a wall jump stays available after sliding off the wall (wall coyote). */
+export const WALL_COYOTE_FRAMES = 6;
+/** Wall jump vertical kick as a fraction of a full ground jump. */
+export const WALL_JUMP_V_MULT = 0.95;
+/** Horizontal launch speed (px/frame) away from the wall on a wall jump. */
+export const WALL_JUMP_H = SPEED * 1.05;
+/** Frames horizontal input is ignored after a wall jump so the push-off reads. */
+export const WALL_JUMP_LOCK = 8;
+
+// ---- Corner correction (ceiling-clip forgiveness) ----
+/**
+ * Max horizontal nudge (px) applied when a rising jump clips the corner of a
+ * ceiling tile: if shoving Pip aside by this much clears his head, he slips past
+ * instead of having his jump killed. Keeps "I clearly cleared that block" jumps
+ * from dying on a 1–2px corner. Must stay well under PLAYER_W so a square hit
+ * (Pip centred under a block) still stops and can bump it.
+ */
+export const CORNER_NUDGE = 10;
+
 // ---- Juice (screen shake + hitstop) ----
 /** Shake magnitude (px) removed each gameplay tick; higher settles faster. */
 export const SHAKE_DECAY = 0.9;
@@ -78,6 +100,8 @@ export const MOVER_LAND_TOL = 50;
 export const STOMP_BOUNCE = JUMP * 0.62;
 /** Crouch slows horizontal movement. */
 export const CROUCH_SPEED_MULT = 0.35;
+/** Min ground speed (px/frame) at which reversing input kicks up a skid (dust + lean). */
+export const SKID_MIN = 2.6;
 /** Fast-fall acceleration multiplier and its raised cap. */
 export const FASTFALL_MULT = 1.6;
 export const FASTFALL_CAP = MAXFALL * 1.7;
@@ -339,6 +363,8 @@ export const CHARGER_CD = 70;
 
 /** Stomp-chain combo: score doubles per chained stomp, capped at this many. */
 export const STOMP_COMBO_CAP = 4;
+/** Frames the "COMBO ×N" banner lingers (pops in, then fades) after a chained stomp. */
+export const COMBO_FLASH_FRAMES = 45;
 /** Crumbling platform: frames after contact before it falls, and its fall accel. */
 export const CRUMBLE_DELAY = 26;
 export const CRUMBLE_GRAV = 0.6;
