@@ -324,16 +324,27 @@ export function drawStageSelect(ctx: CanvasRenderingContext2D, state: GameState)
 
   const entries = buildSelectEntries(loadProgress());
   const cx = VIEW_W / 2;
-  const top = 122;
-  const rowH = 40;
+  // List area sits between the title rule and the footer; rows scroll within it
+  // so the screen never overflows however many stages the campaign has.
+  const listTop = 110;
+  const listBottom = VIEW_H - 66;
+  const rowH = 34;
+  const maxRows = Math.max(1, Math.floor((listBottom - listTop) / rowH));
+  // Window the rows around the selection when the list is taller than the area.
+  const start =
+    entries.length <= maxRows
+      ? 0
+      : Math.max(0, Math.min(state.menuIndex - Math.floor(maxRows / 2), entries.length - maxRows));
+  const end = Math.min(entries.length, start + maxRows);
   ctx.font = "13px 'Press Start 2P', monospace";
 
-  entries.forEach((e, i) => {
-    const y = top + i * rowH;
+  for (let i = start; i < end; i++) {
+    const e = entries[i];
+    const y = listTop + (i - start) * rowH + 22;
     const sel = i === state.menuIndex;
     if (sel) {
       ctx.fillStyle = 'rgba(255,217,74,0.14)';
-      ctx.fillRect(cx - 320, y - 20, 640, 32);
+      ctx.fillRect(cx - 320, y - 20, 640, 30);
     }
     const color = e.locked ? '#544f6e' : sel ? '#ffd94a' : '#cfd6df';
     ctx.fillStyle = color;
@@ -346,7 +357,14 @@ export function drawStageSelect(ctx: CanvasRenderingContext2D, state: GameState)
       ctx.fillStyle = sel ? '#ffd94a' : '#9aa6b4';
       ctx.fillText(`${g}   ${fmtTime(entryTime(e))}`, cx + 300, y);
     }
-  });
+  }
+
+  // Up/down hints when more entries sit outside the visible window.
+  ctx.textAlign = 'center';
+  ctx.fillStyle = DECO_GOLD;
+  ctx.font = "10px 'Press Start 2P', monospace";
+  if (start > 0) ctx.fillText('▲', cx, listTop + 6);
+  if (end < entries.length) ctx.fillText('▼', cx, listBottom + 12);
 
   ctx.textAlign = 'center';
   ctx.font = "12px 'Press Start 2P', monospace";
