@@ -4,7 +4,7 @@
 import { SUPER_MAX } from '../game/constants';
 import { fmtTime } from '../game/grade';
 import { currentWeapon } from '../game/weapons';
-import type { GameState } from '../game/state';
+import type { GameState, Pawn } from '../game/state';
 import type { Screen } from '../types';
 
 function el(id: string): HTMLElement {
@@ -22,6 +22,14 @@ const hudSuper = el('hud-super');
 const hudHearts = el('hud-hearts');
 const hudWeapon = el('hud-weapon');
 const hudTime = el('hud-time');
+const hudGunGroup = el('hud-gun-group');
+
+// Co-op two-player HUD.
+const hudCoop = el('hud-coop');
+const p1Hp = el('p1-hp');
+const p1Hearts = el('p1-hearts');
+const p2Hp = el('p2-hp');
+const p2Hearts = el('p2-hearts');
 
 const goCoins = el('go-coins');
 const goScore = el('go-score');
@@ -65,15 +73,15 @@ function setGrade(node: HTMLElement, grade: string): void {
   if (node.dataset.grade !== value) node.dataset.grade = value;
 }
 
-function renderHp(hp: number, max: number): void {
+function renderHp(node: HTMLElement, hp: number, max: number): void {
   const want = `${hp}/${max}`;
-  if (hudHp.dataset.state === want) return;
-  hudHp.dataset.state = want;
-  hudHp.replaceChildren();
+  if (node.dataset.state === want) return;
+  node.dataset.state = want;
+  node.replaceChildren();
   for (let i = 0; i < max; i++) {
     const span = document.createElement('span');
     span.className = `hp-pip ${i < hp ? 'hp-on' : 'hp-off'}`;
-    hudHp.appendChild(span);
+    node.appendChild(span);
   }
 }
 
@@ -91,17 +99,26 @@ function renderSuper(cards: number): void {
   }
 }
 
-function renderHearts(lives: number): void {
-  const want = Array.from({ length: 3 }, (_, i) => (i < lives ? 'on' : 'off')).join(',');
-  if (hudHearts.dataset.state === want) return;
-  hudHearts.dataset.state = want;
-  hudHearts.replaceChildren();
-  for (let i = 0; i < 3; i++) {
+function renderHearts(node: HTMLElement, lives: number): void {
+  const slots = Math.max(3, lives);
+  const want = Array.from({ length: slots }, (_, i) => (i < lives ? 'on' : 'off')).join(',');
+  if (node.dataset.state === want) return;
+  node.dataset.state = want;
+  node.replaceChildren();
+  for (let i = 0; i < slots; i++) {
     const span = document.createElement('span');
     span.className = `heart ${i < lives ? 'heart-on' : 'heart-off'}`;
     span.textContent = '♥';
-    hudHearts.appendChild(span);
+    node.appendChild(span);
   }
+}
+
+/** Render one co-op player's mini HP + lives card (faded while spectating). */
+function renderCoopPlayer(hpNode: HTMLElement, heartsNode: HTMLElement, pawn: Pawn | undefined, maxHp: number): void {
+  if (!pawn) return;
+  hpNode.parentElement?.classList.toggle('down', pawn.down);
+  renderHp(hpNode, pawn.down ? 0 : pawn.player.hp, maxHp);
+  renderHearts(heartsNode, Math.max(0, pawn.lives));
 }
 
 export function updateHud(state: GameState): void {
@@ -112,12 +129,25 @@ export function updateHud(state: GameState): void {
   setText(hudCoins, `${state.coins}/${total}`);
   setText(hudScore, String(state.score));
   setText(hudLevel, String(levelNum));
-  renderHp(state.player.hp, state.maxHp);
-  renderSuper(state.superCards);
-  renderHearts(state.lives);
-  const wpn = currentWeapon(state.players[0]);
-  const more = state.weapons.length > 1 ? ` ${state.weaponIdx + 1}/${state.weapons.length}` : '';
-  setText(hudWeapon, `${wpn.name}${more}`);
+
+  const coop = state.coop.active && state.players.length > 1;
+  hudCoop.classList.toggle('hidden', !coop);
+  // The single-player HP/super/hearts/weapon widgets are hidden in co-op, which
+  // instead shows a compact per-player card for P1 and P2.
+  for (const node of [hudHp, hudSuper, hudHearts, hudGunGroup]) node.classList.toggle('hidden', coop);
+
+  if (coop) {
+    renderCoopPlayer(p1Hp, p1Hearts, state.players[0], state.maxHp);
+    renderCoopPlayer(p2Hp, p2Hearts, state.players[1], state.maxHp);
+  } else {
+    renderHp(hudHp, state.player.hp, state.maxHp);
+    renderSuper(state.superCards);
+    renderHearts(hudHearts, state.lives);
+    const wpn = currentWeapon(state.players[0]);
+    const more = state.weapons.length > 1 ? ` ${state.weaponIdx + 1}/${state.weapons.length}` : '';
+    setText(hudWeapon, `${wpn.name}${more}`);
+  }
+
   const secs = Math.ceil(state.timeLeft / 60);
   setText(hudTime, state.screen === 'boss' ? '--:--' : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`);
 

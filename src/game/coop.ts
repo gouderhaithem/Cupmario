@@ -65,6 +65,13 @@ export function buildSnapshot(state: GameState): Snapshot {
   });
   return {
     players: state.players.map((pw) => pw.player),
+    pawns: state.players.map((pw) => ({
+      lives: pw.lives,
+      superCards: pw.superCards,
+      weapons: pw.weapons,
+      weaponIdx: pw.weaponIdx,
+      down: pw.down,
+    })),
     enemies: state.enemies,
     projectiles: state.projectiles,
     mushrooms: state.mushrooms,
@@ -97,7 +104,18 @@ export function applySnapshot(state: GameState, s: Snapshot): void {
   if (s.stageIndex !== state.stageIndex) beginStage?.(s.stageIndex);
 
   while (state.players.length < s.players.length) addPawn(state);
-  for (let i = 0; i < s.players.length; i++) state.players[i].player = s.players[i];
+  for (let i = 0; i < s.players.length; i++) {
+    const pw = state.players[i];
+    pw.player = s.players[i];
+    const meta = s.pawns?.[i];
+    if (meta) {
+      pw.lives = meta.lives;
+      pw.superCards = meta.superCards;
+      pw.weapons = meta.weapons;
+      pw.weaponIdx = meta.weaponIdx;
+      pw.down = meta.down;
+    }
+  }
 
   state.enemies = s.enemies;
   state.projectiles = s.projectiles;

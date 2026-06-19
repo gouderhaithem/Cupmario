@@ -33,6 +33,10 @@ export interface Pawn {
   combo: number;
   aimX: number;
   aimY: number;
+  /** Lives remaining for THIS player (per-player in co-op). */
+  lives: number;
+  /** Out of lives and sitting out the rest of the run (co-op spectator). */
+  down: boolean;
 }
 
 /** Live online co-op session (host-authoritative shared world). The host
@@ -257,7 +261,19 @@ export function makePawn(player: Player): Pawn {
     combo: 0,
     aimX: 0,
     aimY: 0,
+    lives: START_LIVES,
+    down: false,
   };
+}
+
+/** Pawns still in the run (not spectating after running out of lives). */
+export function activePawns(state: GameState): Pawn[] {
+  return state.players.filter((pw) => !pw.down);
+}
+
+/** Every pawn is out of lives → the run is over. */
+export function allDown(state: GameState): boolean {
+  return state.players.every((pw) => pw.down);
 }
 
 /** Add a second co-op pawn at the level spawn (idempotent). Returns it. */
@@ -288,15 +304,60 @@ export function respawnExtraPawns(state: GameState): void {
     pawn.player.armed = old.player.armed;
     pawn.weapons = old.weapons;
     pawn.weaponIdx = old.weaponIdx;
+    pawn.lives = old.lives; // a respawn keeps remaining lives (not a fresh run)
+    pawn.down = old.down;
     state.players[i] = pawn;
   }
 }
 
-/** The pawn whose center is closest to (x, y) — used for enemy/boss targeting. */
+/** Reset a pawn's transient controller state (keeps weapons, lives, super). */
+function resetPawnController(pawn: Pawn): void {
+  pawn.keys = makeKeys();
+  pawn.jumpLatch = false;
+  pawn.coyote = 0;
+  pawn.jumpBuffer = 0;
+  pawn.wallJumpLock = 0;
+  pawn.jumping = false;
+  pawn.shootLatch = false;
+  pawn.shootCd = 0;
+  pawn.dashLatch = false;
+  pawn.dashTap = false;
+  pawn.switchLatch = false;
+  pawn.charge = 0;
+  pawn.superLatch = false;
+  pawn.parryLatch = false;
+  pawn.combo = 0;
+  pawn.aimX = 0;
+  pawn.aimY = 0;
+}
+
+/** Bring one pawn back beside a living partner (co-op mid-level respawn). */
+export function revivePawnBeside(state: GameState, pawn: Pawn): void {
+  const partner = state.players.find((pw) => pw !== pawn && !pw.down && pw.player.hp > 0);
+  const armed = pawn.player.armed;
+  pawn.player = spawnPlayer(state.level, state.maxHp);
+  pawn.player.x = partner ? partner.player.x + (PLAYER_W + 8) : state.respawnX;
+  pawn.player.y = partner ? partner.player.y : state.respawnY;
+  pawn.player.armed = armed;
+  resetPawnController(pawn);
+}
+
+/** Bring spectating pawns back into play for a new stage (1 life if empty). */
+export function reviveDowned(state: GameState): void {
+  for (const pw of state.players) {
+    if (pw.down) {
+      pw.down = false;
+      if (pw.lives < 1) pw.lives = 1;
+    }
+  }
+}
+
+/** The active pawn whose center is closest to (x, y) — enemy/boss targeting. */
 export function nearestPawn(state: GameState, x: number, y: number): Pawn {
   let best = state.players[0];
   let bestD = Infinity;
   for (const pw of state.players) {
+    if (pw.down) continue; // never target a spectating player
     const dx = pw.player.x + pw.player.w / 2 - x;
     const dy = pw.player.y + pw.player.h / 2 - y;
     const d = dx * dx + dy * dy;
@@ -350,6 +411,7 @@ function attachPawnProxies(state: GameState): void {
   proxyField(state, 'combo');
   proxyField(state, 'aimX');
   proxyField(state, 'aimY');
+  proxyField(state, 'lives');
 }
 
 /** Build the initial state for level 0, sitting on the title screen. */
@@ -382,7 +444,6 @@ export function createState(): GameState {
     sparks: [],
     score: 0,
     coins: 0,
-    lives: START_LIVES,
     best: loadBest(),
     frame: 0,
     camX: 0,

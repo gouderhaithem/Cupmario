@@ -6,7 +6,9 @@ import { VIEW_W } from '../game/constants';
 import type { GameState } from '../game/state';
 
 export function updateCamera(state: GameState): void {
-  const players = state.players;
+  // Only active (non-spectating) pawns are framed; fall back to pawn 0.
+  const players = state.players.filter((pw) => !pw.down);
+  if (players.length === 0) players.push(state.players[0]);
 
   // Center on the group: the midpoint of the leftmost and rightmost pawn center.
   let minC = Infinity;

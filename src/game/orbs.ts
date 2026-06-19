@@ -19,6 +19,7 @@ export function updateOrbs(state: GameState): boolean {
     }
     // An armed orb hurts the first non-invulnerable pawn that touches it.
     for (const pw of state.players) {
+      if (pw.down) continue;
       const p = pw.player;
       if (p.hurt > 0) continue; // i-frames (incl. a just-landed parry) pass through
       if (p.x + p.w > orb.x && p.x < orb.x + orb.w && p.y + p.h > orb.y && p.y < orb.y + orb.h) {

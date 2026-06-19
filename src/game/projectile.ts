@@ -79,6 +79,7 @@ export function updateProjectiles(state: GameState): boolean {
       // Crouch shrinks Pip's real hitbox (see updateCrouch), so a ducked profile
       // already slips under a sweeping beam — no separate duck offset needed.
       for (const pw of state.players) {
+        if (pw.down) continue;
         const p = pw.player;
         if (p.hurt <= 0 && b.x + b.w > p.x && b.x < p.x + p.w && b.y + b.h > p.y && b.y < p.y + p.h) {
           if (hitPlayer(state, pw)) {
@@ -129,6 +130,7 @@ export function updateProjectiles(state: GameState): boolean {
     } else {
       // Enemy bolt: hurt the first pawn it overlaps (unless mid-invulnerability).
       for (const pw of state.players) {
+        if (pw.down) continue;
         const p = pw.player;
         if (p.hurt <= 0 && b.x + b.w > p.x && b.x < p.x + p.w && b.y + b.h > p.y && b.y < p.y + p.h) {
           b.alive = false;

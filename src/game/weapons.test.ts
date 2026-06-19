@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { WEAPONS, WEAPON_ORDER, currentWeapon } from './weapons';
-import type { GameState } from './state';
+import type { Pawn } from './state';
 import type { WeaponId } from '../types';
 
 describe('WEAPONS roster', () => {
@@ -36,8 +36,8 @@ describe('WEAPONS roster', () => {
 });
 
 describe('currentWeapon', () => {
-  const stub = (weapons: WeaponId[], weaponIdx: number): GameState =>
-    ({ weapons, weaponIdx }) as unknown as GameState;
+  const stub = (weapons: WeaponId[], weaponIdx: number): Pawn =>
+    ({ weapons, weaponIdx }) as unknown as Pawn;
 
   it('returns the equipped weapon', () => {
     expect(currentWeapon(stub(['spread'], 0)).id).toBe('spread');

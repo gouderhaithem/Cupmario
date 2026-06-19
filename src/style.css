@@ -119,6 +119,19 @@ html, body {
 .hp-on { background: #58d68a; }
 .hp-off { background: #3a3a55; }
 
+/* ---- Co-op two-player HUD ---- */
+.hud-coop { display: flex; gap: 18px; align-items: center; }
+.hud-coop.hidden { display: none; }
+.hud-pcard { display: flex; align-items: center; gap: 5px; }
+.hud-ptag { font-size: 11px; letter-spacing: 1px; }
+.hud-ptag1 { color: var(--gold); }
+.hud-ptag2 { color: #c8ffa0; }
+.hud-mini-hp { display: flex; gap: 2px; align-items: center; }
+.hud-mini-hp .hp-pip { width: 8px; height: 8px; border-width: 1px; }
+.hud-mini-hearts { display: flex; gap: 3px; }
+.hud-mini-hearts .heart { font-size: 12px; }
+.hud-pcard.down { opacity: 0.45; }
+
 #hud-super { display: flex; gap: 3px; align-items: center; }
 .super-pip {
   width: 8px;

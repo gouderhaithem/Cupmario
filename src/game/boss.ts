@@ -332,6 +332,7 @@ export function updateBoss(state: GameState): boolean {
 
   // Contact damage — a boss is never stompable; it can hit either pawn.
   for (const pw of state.players) {
+    if (pw.down) continue;
     const p = pw.player;
     if (
       p.hurt <= 0 &&

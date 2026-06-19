@@ -75,16 +75,19 @@ function main(): void {
 
   // ---- Boss-arena update: locked camera, boss patterns, instant retry ----
   const updateBossArena = (): void => {
-    for (const pawn of state.players) updatePlayer(state, pawn);
+    for (const pawn of state.players) if (!pawn.down) updatePlayer(state, pawn);
     if (updateBoss(state)) return; // contact/KO ended the frame (retry or win)
-    for (const pawn of state.players) tryParry(state, pawn);
-    for (const pawn of state.players) updateSuper(state, pawn);
+    for (const pawn of state.players) if (!pawn.down) tryParry(state, pawn);
+    for (const pawn of state.players) if (!pawn.down) updateSuper(state, pawn);
     if (updateProjectiles(state)) return; // a bolt forced a retry
     if (updateEnemies(state)) return; // a summoned add forced a retry
     if (updateHazards(state)) return; // a root pillar / floor zap forced a retry
 
-    if (state.players.some((pw) => pw.player.y > state.level.worldH + PIT_MARGIN)) {
-      loseLife(state); // on the boss screen this is an instant retry
+    const fellBoss = state.players.find(
+      (pw) => !pw.down && pw.player.y > state.level.worldH + PIT_MARGIN,
+    );
+    if (fellBoss) {
+      loseLife(state, fellBoss); // on the boss screen this is an instant retry
       return;
     }
 
@@ -129,26 +132,29 @@ function main(): void {
 
     if (state.timeLeft > 0) state.timeLeft -= 1; // per-level time budget
 
-    for (const pawn of state.players) updatePlayer(state, pawn);
+    for (const pawn of state.players) if (!pawn.down) updatePlayer(state, pawn);
     updateMovers(state); // move platforms + carry the player before other checks
     updateCrumbles(state); // crumbling platforms (also carry/snap the player)
     updateCoins(state);
     updateCheckpoints(state); // light posts Pip passes; move the respawn point
     updateMushrooms(state); // drift dropped power-ups + handle pickup
-    for (const pawn of state.players) tryParry(state, pawn); // deflect pink bolts/orbs before a hit resolves
+    for (const pawn of state.players) if (!pawn.down) tryParry(state, pawn); // deflect before a hit resolves
     if (updateOrbs(state)) return; // unparried orb contact cost a life
-    for (const pawn of state.players) updateSuper(state, pawn); // spend the meter: EX shot or MEGABLAST
+    for (const pawn of state.players) if (!pawn.down) updateSuper(state, pawn); // EX shot or MEGABLAST
     if (updateProjectiles(state)) return; // a bolt cost a life this frame
     if (updateEnemies(state)) return; // lost a life this frame
 
-    // Fell into a pit — any pawn dropping below costs a (shared) life.
-    if (state.players.some((pw) => pw.player.y > state.level.worldH + PIT_MARGIN)) {
-      loseLife(state);
+    // Fell into a pit — the pawn that dropped below spends one of its lives.
+    const fell = state.players.find(
+      (pw) => !pw.down && pw.player.y > state.level.worldH + PIT_MARGIN,
+    );
+    if (fell) {
+      loseLife(state, fell);
       return;
     }
 
-    // Reached the goal flag — either pawn touching it clears the level for both.
-    if (state.players.some((pw) => pw.player.x + pw.player.w / 2 >= state.level.flagX)) {
+    // Reached the goal flag — either active pawn touching it clears it for both.
+    if (state.players.some((pw) => !pw.down && pw.player.x + pw.player.w / 2 >= state.level.flagX)) {
       reachFlag(state);
       return;
     }

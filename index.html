@@ -36,13 +36,26 @@
               <span class="hud-label hud-label-time">TIME</span>
               <span id="hud-time" class="hud-val">1:15</span>
             </div>
-            <div class="hud-group">
+            <div class="hud-group" id="hud-gun-group">
               <span class="hud-label hud-label-gun">GUN</span>
               <span id="hud-weapon" class="hud-val">PEASHOT</span>
             </div>
             <div id="hud-hp"></div>
             <div id="hud-super" aria-label="Super meter"></div>
             <div id="hud-hearts"></div>
+            <!-- Co-op: per-player HP + lives (shown only in 2-player). -->
+            <div id="hud-coop" class="hud-coop hidden">
+              <div class="hud-pcard">
+                <span class="hud-ptag hud-ptag1">P1</span>
+                <span id="p1-hp" class="hud-mini-hp"></span>
+                <span id="p1-hearts" class="hud-mini-hearts"></span>
+              </div>
+              <div class="hud-pcard">
+                <span class="hud-ptag hud-ptag2">P2</span>
+                <span id="p2-hp" class="hud-mini-hp"></span>
+                <span id="p2-hearts" class="hud-mini-hearts"></span>
+              </div>
+            </div>
           </div>
         </div>
 

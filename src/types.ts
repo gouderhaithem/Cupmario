@@ -568,9 +568,20 @@ export interface Boss {
  * is rebuilt locally per level, so only dynamic state travels — coins as a list
  * of collected indices. Cosmetic-only particles (puffs/sparks/pops) are omitted.
  */
+/** Per-pawn HUD fields the guest needs but that live on the Pawn, not Player. */
+export interface SnapshotPawn {
+  lives: number;
+  superCards: number;
+  weapons: WeaponId[];
+  weaponIdx: number;
+  down: boolean;
+}
+
 export interface Snapshot {
   /** Both players' full transforms: [0] host, [1] guest. */
   players: Player[];
+  /** Per-pawn HUD state aligned with `players`. */
+  pawns: SnapshotPawn[];
   enemies: Enemy[];
   projectiles: Projectile[];
   mushrooms: Mushroom[];

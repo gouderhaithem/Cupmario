@@ -276,6 +276,7 @@ export function updateEnemies(state: GameState): boolean {
     // Contact resolves against each pawn: a stomp from above kills, otherwise a
     // side/below hit hurts that pawn. (Small insets so contact feels fair.)
     for (const pw of state.players) {
+      if (pw.down) continue;
       const p = pw.player;
       const overlap =
         p.x + p.w > e.x + 4 && p.x < e.x + e.w - 4 && p.y + p.h > e.y + 4 && p.y < e.y + e.h;

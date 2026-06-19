@@ -20,6 +20,7 @@ export function updateHazards(state: GameState): boolean {
     hz.life -= 1;
     // Lethal window: overlap with any pawn hurts it (unless mid-invulnerability).
     for (const pw of state.players) {
+      if (pw.down) continue;
       const p = pw.player;
       if (
         p.hurt <= 0 &&

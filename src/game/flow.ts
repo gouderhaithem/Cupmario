@@ -25,7 +25,7 @@ import type { Stage } from './levels';
 import { makeBoss, resetBoss } from './boss';
 import { gradeStage } from './grade';
 import { buildSelectEntries } from './select';
-import { loadLevel, makeKeys, respawnExtraPawns, spawnPlayer } from './state';
+import { allDown, loadLevel, makeKeys, respawnExtraPawns, revivePawnBeside, reviveDowned, spawnPlayer } from './state';
 import { saveSettings } from './settings';
 import { cycleDifficulty, isAssist } from './difficulty';
 import { ASSIST_BONUS_HP, MAX_HP } from './constants';
@@ -98,9 +98,14 @@ function saveProgress(i: number): void {
 function resetRun(state: GameState): void {
   state.coins = 0;
   state.score = 0;
-  state.lives = START_LIVES;
-  state.weapons = ['peashot'];
-  state.weaponIdx = 0;
+  // Fresh per-player economy: full lives, back in play, base loadout.
+  for (const pw of state.players) {
+    pw.lives = START_LIVES;
+    pw.down = false;
+    pw.weapons = ['peashot'];
+    pw.weaponIdx = 0;
+    pw.superCards = 0;
+  }
   state.lastGrade = '';
   state.bestGrade = '';
   state.maxHp = MAX_HP + (isAssist(state.difficulty) ? ASSIST_BONUS_HP : 0);
@@ -133,6 +138,7 @@ export function startBossRush(state: GameState): void {
 function enterStage(state: GameState, i: number): void {
   state.stageIndex = i;
   if (state.mode === 'campaign') saveProgress(i);
+  reviveDowned(state); // co-op: spectating players rejoin for the new stage
   const stage = sequenceOf(state)[i];
   if (stage.kind === 'boss') {
     enterBoss(state, stage.boss);
@@ -164,19 +170,45 @@ export function advanceStage(state: GameState): void {
   enterStage(state, next);
 }
 
-/** Lose a life; respawn in place, or end the game at 0 lives. */
-export function loseLife(state: GameState): void {
+/**
+ * A pawn lost all HP. Per-player lives: that pawn spends a life and respawns;
+ * a pawn out of lives sits out (co-op spectator). On a boss it's an instant
+ * retry (no life cost). The run ends only when every pawn is out.
+ */
+export function loseLife(state: GameState, pawn: Pawn = state.players[0]): void {
   // The film "catches fire" on every death — boss retry or life lost.
   state.burn = BURN_FRAMES;
-  // On a boss, death is an instant retry (infinite tries, no life cost).
+  const partnerUp = state.players.some((pw) => pw !== pawn && !pw.down && pw.player.hp > 0);
+
+  // On a boss, death is an instant retry (infinite tries, no life cost). With a
+  // partner still up, revive just the fallen pawn so the shared fight continues.
   if (state.screen === 'boss') {
+    if (partnerUp) {
+      revivePawnBeside(state, pawn);
+      shakeScreen(state, SHAKE_HURT);
+      sfx('die');
+      return;
+    }
     bossRetry(state);
     return;
   }
-  state.lives -= 1;
+
+  pawn.lives -= 1;
   shakeScreen(state, SHAKE_HURT);
   sfx('die');
-  if (state.lives <= 0) {
+
+  // Co-op, partner alive: respawn (or sit out) only this pawn — the level keeps
+  // running for the other player, so don't rebuild the section.
+  if (partnerUp) {
+    if (pawn.lives > 0) revivePawnBeside(state, pawn);
+    else pawn.down = true;
+    return;
+  }
+
+  // Solo, or a co-op total wipe: out of lives sits the pawn out; the run ends
+  // only when everyone is down.
+  if (pawn.lives <= 0) pawn.down = true;
+  if (allDown(state)) {
     state.screen = 'gameover';
     stopMusic();
     return;

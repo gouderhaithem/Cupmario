@@ -202,6 +202,7 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
   // Each flashes while invulnerable. Drawn in order so later pawns sit on top.
   // A co-op pawn gets a P1/P2 nametag so the two players can tell each other apart.
   for (let i = 0; i < state.players.length; i++) {
+    if (state.players[i].down) continue; // spectating co-op player isn't drawn
     const pl = state.players[i].player;
     if (pl.hurt > 0 && frame % 8 < 4) continue;
     const skin = i === 0 ? SKINS[state.levelIndex] ?? SKINS[0] : COOP_PARTNER_SKIN;
