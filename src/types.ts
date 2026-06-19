@@ -576,6 +576,11 @@ export interface Snapshot {
   mushrooms: Mushroom[];
   boss: Boss | null;
   hazards: Hazard[];
+  /** Host-simulated level entities the guest can't run itself. */
+  movers: MovingPlatform[];
+  crumbles: Crumble[];
+  parryOrbs: ParryOrb[];
+  checkpoints: Checkpoint[];
   /** Indices into level.coins that have been collected. */
   coinsGot: number[];
   camX: number;

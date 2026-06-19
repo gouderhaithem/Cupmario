@@ -61,4 +61,15 @@ describe('snapshot round-trip', () => {
     applySnapshot(guest, snap);
     expect(guest.enemies.length).toBe(host.enemies.length);
   });
+
+  it('carries host-simulated movers so the guest sees them move', () => {
+    const host = hostState();
+    host.movers = [
+      { x: 250, y: 400, w: 90, h: 18, axis: 'h', min: 200, max: 500, speed: 2, dir: 1, dx: 2, dy: 0 },
+    ];
+    const guest = createState();
+    applySnapshot(guest, buildSnapshot(host));
+    expect(guest.movers).toHaveLength(1);
+    expect(guest.movers[0].x).toBe(250);
+  });
 });

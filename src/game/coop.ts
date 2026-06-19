@@ -70,6 +70,10 @@ export function buildSnapshot(state: GameState): Snapshot {
     mushrooms: state.mushrooms,
     boss: state.boss,
     hazards: state.hazards,
+    movers: state.movers,
+    crumbles: state.crumbles,
+    parryOrbs: state.parryOrbs,
+    checkpoints: state.checkpoints,
     coinsGot,
     camX: state.camX,
     score: state.score,
@@ -100,6 +104,10 @@ export function applySnapshot(state: GameState, s: Snapshot): void {
   state.mushrooms = s.mushrooms;
   state.boss = s.boss;
   state.hazards = s.hazards;
+  state.movers = s.movers;
+  state.crumbles = s.crumbles;
+  state.parryOrbs = s.parryOrbs;
+  state.checkpoints = s.checkpoints;
 
   for (const c of state.level.coins) c.got = false;
   for (const i of s.coinsGot) {
