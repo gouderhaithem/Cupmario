@@ -102,9 +102,16 @@ mover/crumble carry, hazard contact, boss contact — iterate every pawn.
   arena together. Either pawn reaching the flag clears; any pawn in a pit costs a
   life. **Shared boss now works: both fire into the one shared boss, combined
   damage, KO advances both** — the original report is fixed. 103 tests pass.
-  **Still interim:** lives are a SHARED pool (not per-player as decided) and the
-  HUD shows pawn 0's hp/lives only — per-player lives + a two-player HUD is the
-  remaining polish. Networking still needs the user's live two-peer test.
+  **Per-player lives + two-player HUD — ✅ DONE (follow-up commit).** Each pawn
+  has its own `lives` + `down` (spectator) flag; a fallen pawn spends its own
+  life and respawns beside the partner, sits out when empty, and the run ends
+  only when all are down (spectators skipped by sim/camera/render/damage; revive
+  on next stage; boss revives a fallen pawn without resetting the shared boss).
+  HUD shows a compact P1/P2 HP+lives card in co-op; snapshot carries per-pawn
+  HUD state. Single-player unchanged. 109 tests.
+  **Verified live by the user:** connection works (after the JSON-serialization
+  fix), moving platforms/entities sync. Remaining: ongoing live playtest of the
+  per-player-lives/HUD + latency feel; optional guest-side prediction.
 - **E — Polish.** Guest-side prediction + interpolation, disconnect/host-migration,
   lobby copy, grade handling in co-op.
 
