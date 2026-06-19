@@ -3,7 +3,7 @@
 // Mushrooms unlock the next weapon in WEAPON_ORDER (see mushroom.ts).
 
 import type { Weapon, WeaponId } from '../types';
-import type { GameState } from './state';
+import type { Pawn } from './state';
 
 export const WEAPONS: Record<WeaponId, Weapon> = {
   peashot: { id: 'peashot', name: 'PEASHOT', damage: 1, fireRate: 14, speed: 9, sizeMult: 1 },
@@ -54,7 +54,7 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
  */
 export const WEAPON_ORDER: WeaponId[] = ['peashot', 'homing', 'lobber', 'charge'];
 
-/** The weapon Pip currently has equipped. */
-export function currentWeapon(state: GameState): Weapon {
-  return WEAPONS[state.weapons[state.weaponIdx] ?? 'peashot'];
+/** The weapon this pawn currently has equipped. */
+export function currentWeapon(pawn: Pawn): Weapon {
+  return WEAPONS[pawn.weapons[pawn.weaponIdx] ?? 'peashot'];
 }

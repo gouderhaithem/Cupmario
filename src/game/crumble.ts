@@ -6,7 +6,6 @@ import { CRUMBLE_DELAY, CRUMBLE_GRAV, MAXFALL, MOVER_LAND_TOL } from './constant
 import type { GameState } from './state';
 
 export function updateCrumbles(state: GameState): void {
-  const p = state.player;
   const { worldH } = state.level;
 
   for (const c of state.crumbles) {
@@ -16,14 +15,17 @@ export function updateCrumbles(state: GameState): void {
       continue;
     }
 
-    // Ride detection: standing on top snaps Pip to the surface and arms the timer.
-    const hOverlap = p.x + p.w > c.x && p.x < c.x + c.w;
-    const feet = p.y + p.h;
-    if (hOverlap && p.vy >= 0 && feet >= c.y && feet <= c.y + MOVER_LAND_TOL) {
-      p.y = c.y - p.h;
-      p.vy = 0;
-      p.onGround = true;
-      if (c.timer < 0) c.timer = CRUMBLE_DELAY;
+    // Ride detection: any pawn standing on top snaps to the surface + arms the timer.
+    for (const pw of state.players) {
+      const p = pw.player;
+      const hOverlap = p.x + p.w > c.x && p.x < c.x + c.w;
+      const feet = p.y + p.h;
+      if (hOverlap && p.vy >= 0 && feet >= c.y && feet <= c.y + MOVER_LAND_TOL) {
+        p.y = c.y - p.h;
+        p.vy = 0;
+        p.onGround = true;
+        if (c.timer < 0) c.timer = CRUMBLE_DELAY;
+      }
     }
 
     // Once armed, count down regardless of contact, then let go.

@@ -81,6 +81,7 @@
             </div>
             <div class="ov-prompt blink">PRESS SPACE OR TAP TO START</div>
             <div class="ov-prompt-sub">PRESS &#9660; / S &nbsp;&mdash;&nbsp; STAGE SELECT &amp; BOSS RUSH</div>
+            <div class="ov-prompt-sub">PRESS C &nbsp;&mdash;&nbsp; 2-PLAYER ONLINE CO-OP</div>
           </div>
 
           <div id="ov-gameover" class="overlay hidden">
@@ -110,6 +111,36 @@
             <div class="ov-line">TIME: <span id="win-time">—</span> &nbsp; BEST <span id="win-time-best">—</span></div>
             <div class="ov-line ov-line-cyan">BEST SCORE: <span id="win-best">0</span></div>
             <div class="ov-prompt blink">PRESS SPACE OR TAP TO PLAY AGAIN</div>
+          </div>
+
+          <!-- Co-op lobby (Host / Join). Wired by engine/lobby.ts. -->
+          <div id="ov-lobby" class="overlay hidden">
+            <div class="ov-logo lobby-logo">CO-OP</div>
+            <div class="ov-sub">PLAY ONLINE TOGETHER</div>
+
+            <!-- Step 1: pick a role -->
+            <div id="lobby-choice" class="lobby-section">
+              <button id="lobby-host" class="lobby-btn" type="button">HOST GAME</button>
+              <button id="lobby-join" class="lobby-btn" type="button">JOIN GAME</button>
+            </div>
+
+            <!-- Host: show the code to share -->
+            <div id="lobby-hosting" class="lobby-section hidden">
+              <div class="ov-line">YOUR CODE</div>
+              <div id="lobby-code" class="lobby-code">&mdash;&mdash;&mdash;&mdash;</div>
+              <div class="ov-line-cyan">SHARE THIS CODE WITH PLAYER 2</div>
+            </div>
+
+            <!-- Guest: type the host's code -->
+            <div id="lobby-joining" class="lobby-section hidden">
+              <div class="ov-line">ENTER CODE</div>
+              <input id="lobby-input" class="lobby-input" maxlength="4" autocomplete="off"
+                     autocapitalize="characters" spellcheck="false" aria-label="Join code" />
+              <button id="lobby-connect" class="lobby-btn" type="button">CONNECT</button>
+            </div>
+
+            <div id="lobby-status" class="ov-prompt"></div>
+            <div class="ov-prompt-sub">ESC &nbsp;&mdash;&nbsp; BACK</div>
           </div>
         </div>
       </div>

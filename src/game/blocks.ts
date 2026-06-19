@@ -6,13 +6,13 @@
 import { sfx } from '../engine/audio';
 import { COIN_SCORE, PALETTE, TILE, TILE_POWBLOCK, TILE_QBLOCK, TILE_USED } from './constants';
 import { spawnMushroom } from './mushroom';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 
 const POP_LIFE = 36;
 
 /** Trigger the first question block in the tile row directly above Pip's head. */
-export function bumpBlocks(state: GameState): void {
-  const p = state.player;
+export function bumpBlocks(state: GameState, pawn: Pawn): void {
+  const p = pawn.player;
   const level = state.level;
   // After an upward snap, p.y = (r+1)*TILE, so the block row is p.y/TILE - 1.
   const r = Math.round(p.y / TILE) - 1;

@@ -19,17 +19,17 @@ import {
   SHAKE_STOMP,
   SUPER_MAX,
 } from './constants';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 
 const POP_LIFE = 40;
 
 /** Shared parry reward: deflect bounce, i-frames, +1 Super card, juice + pop. */
-function rewardParry(state: GameState, x: number, y: number): void {
-  const p = state.player;
+function rewardParry(state: GameState, pawn: Pawn, x: number, y: number): void {
+  const p = pawn.player;
   p.vy = PARRY_BOUNCE;
   p.hurt = Math.max(p.hurt, PARRY_IFRAMES);
   state.runParries += 1;
-  if (state.superCards < SUPER_MAX) state.superCards += 1;
+  if (pawn.superCards < SUPER_MAX) pawn.superCards += 1;
   shakeScreen(state, SHAKE_STOMP);
   hitStop(state, HITSTOP_STOMP); // a beat of freeze for impact
   state.flash = Math.max(state.flash, PARRY_FLASH); // bright pink-white pop
@@ -48,17 +48,17 @@ const overlaps = (
   bh: number,
 ): boolean => ax + aw > bx && ax < bx + bw && ay + ah > by && ay < by + bh;
 
-export function tryParry(state: GameState): void {
-  const p = state.player;
-  const keys = state.keys;
+export function tryParry(state: GameState, pawn: Pawn): void {
+  const p = pawn.player;
+  const keys = pawn.keys;
 
   // Rising edge of jump = one parry attempt; reset when the button is released.
   let attempt = false;
-  if (keys.jump && !state.parryLatch) {
-    state.parryLatch = true;
+  if (keys.jump && !pawn.parryLatch) {
+    pawn.parryLatch = true;
     attempt = true;
   } else if (!keys.jump) {
-    state.parryLatch = false;
+    pawn.parryLatch = false;
   }
   if (!attempt) return;
 
@@ -67,7 +67,7 @@ export function tryParry(state: GameState): void {
     if (!b.alive || b.from !== 'enemy' || !b.parryable) continue;
     if (overlaps(b.x, b.y, b.w, b.h, p.x, p.y, p.w, p.h)) {
       b.alive = false;
-      rewardParry(state, b.x, b.y);
+      rewardParry(state, pawn, b.x, b.y);
       return; // one parry per press
     }
   }
@@ -77,7 +77,7 @@ export function tryParry(state: GameState): void {
     if (orb.cooldown > 0) continue;
     if (overlaps(orb.x, orb.y, orb.w, orb.h, p.x, p.y, p.w, p.h)) {
       orb.cooldown = ORB_RESPAWN;
-      rewardParry(state, orb.x + orb.w / 2, orb.y);
+      rewardParry(state, pawn, orb.x + orb.w / 2, orb.y);
       p.vx = p.face * PARRY_FORWARD; // forward launch — the traversal half
       return;
     }

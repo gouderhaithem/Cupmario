@@ -404,6 +404,54 @@ html, body {
   opacity: 0.85;
 }
 
+/* ---- Co-op lobby ---- */
+#ov-lobby { background: rgba(17, 17, 42, 0.9); gap: 18px; }
+.lobby-logo { font-size: 40px; }
+
+.lobby-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.lobby-section.hidden { display: none; }
+
+.lobby-btn {
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--ink);
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 #b3842a;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+.lobby-btn:hover { background: #ffe88a; }
+.lobby-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #b3842a; }
+
+.lobby-code {
+  font-size: 40px;
+  letter-spacing: 12px;
+  color: var(--cyan);
+  text-shadow: 3px 3px 0 #0a3a44;
+  padding-left: 12px; /* balance the trailing letter-spacing */
+}
+
+.lobby-input {
+  font-family: inherit;
+  font-size: 28px;
+  letter-spacing: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  width: 220px;
+  color: var(--cyan);
+  background: rgba(0, 0, 0, 0.4);
+  border: 3px solid var(--gold);
+  padding: 10px 0 10px 10px;
+  outline: none;
+}
+
 /* ---- Animations (match prototype) ---- */
 @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 @keyframes pulse { 0%, 49% { transform: scale(1); } 50%, 100% { transform: scale(1.05); } }

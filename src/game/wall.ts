@@ -6,7 +6,7 @@
 import { TILE, WALL_COYOTE_FRAMES, WALL_SLIDE_SPEED } from './constants';
 import { solid } from './physics';
 import { spawnWallDust } from './puff';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 import type { Level, Player } from '../types';
 
 /** Emit a friction wisp every Nth frame while sliding (throttled spawn rate). */
@@ -34,9 +34,9 @@ export function wallBeside(level: Level, p: Player, dir: -1 | 1): boolean {
  * fall is capped to a slow crawl and the wall-coyote window is refreshed so a
  * jump fired a few frames after letting go still wall-jumps. Mutates the player.
  */
-export function updateWall(state: GameState): void {
-  const p = state.player;
-  const keys = state.keys;
+export function updateWall(state: GameState, pawn: Pawn): void {
+  const p = pawn.player;
+  const keys = pawn.keys;
 
   if (p.wallCoyote > 0) p.wallCoyote -= 1;
 

@@ -509,3 +509,9 @@ export const SKINS: Skin[] = [
   // 5 — THE GLITCH GATE: neon magenta
   { hair: '#2a0a3a', shirt: '#e83fb0', shirtHi: '#ff8fe0', pants: '#1a0a2a', shoe: '#0c0418', brim: '#8a1f6a' },
 ];
+
+/** The online co-op partner's Pip — a fixed lime/violet look, distinct from
+ *  every level skin so "the other player" always reads at a glance. */
+export const COOP_PARTNER_SKIN: Skin = {
+  hair: '#1a3a1a', shirt: '#9ae66e', shirtHi: '#c8ffa0', pants: '#2a1a4a', shoe: '#12081f', brim: '#4a8a2f',
+};

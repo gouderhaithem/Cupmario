@@ -51,6 +51,7 @@ const overlays: Record<OverlayScreen, HTMLElement> = {
   gameover: el('ov-gameover'),
   levelup: el('ov-levelup'),
   win: el('ov-win'),
+  lobby: el('ov-lobby'),
 };
 
 function setText(node: HTMLElement, value: string): void {
@@ -114,7 +115,7 @@ export function updateHud(state: GameState): void {
   renderHp(state.player.hp, state.maxHp);
   renderSuper(state.superCards);
   renderHearts(state.lives);
-  const wpn = currentWeapon(state);
+  const wpn = currentWeapon(state.players[0]);
   const more = state.weapons.length > 1 ? ` ${state.weaponIdx + 1}/${state.weapons.length}` : '';
   setText(hudWeapon, `${wpn.name}${more}`);
   const secs = Math.ceil(state.timeLeft / 60);

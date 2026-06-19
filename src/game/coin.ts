@@ -10,19 +10,22 @@ const PICKUP_Y = 32;
 const POP_LIFE = 36;
 
 export function updateCoins(state: GameState): void {
-  const p = state.player;
-  const pcx = p.x + p.w / 2;
-  const pcy = p.y + p.h / 2;
-
   for (const co of state.level.coins) {
     if (co.got) continue;
-    if (Math.abs(pcx - co.cx) < PICKUP_X && Math.abs(pcy - co.cy) < PICKUP_Y) {
-      co.got = true;
-      state.coins += 1;
-      state.score += COIN_SCORE;
-      sfx('coin');
-      spawnCoinSparkle(state, co.cx, co.cy);
-      state.pops.push({ x: co.cx, y: co.cy, life: POP_LIFE, text: '+100', color: PALETTE.coin });
+    // Either pawn can grab a coin; the first overlap this tick collects it.
+    for (const pw of state.players) {
+      const p = pw.player;
+      const pcx = p.x + p.w / 2;
+      const pcy = p.y + p.h / 2;
+      if (Math.abs(pcx - co.cx) < PICKUP_X && Math.abs(pcy - co.cy) < PICKUP_Y) {
+        co.got = true;
+        state.coins += 1;
+        state.score += COIN_SCORE;
+        sfx('coin');
+        spawnCoinSparkle(state, co.cx, co.cy);
+        state.pops.push({ x: co.cx, y: co.cy, life: POP_LIFE, text: '+100', color: PALETTE.coin });
+        break;
+      }
     }
   }
 }

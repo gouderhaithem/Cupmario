@@ -142,8 +142,29 @@ places coins at tile centers, and spawns enemies (skipping any that land over a 
 - Prefer pure functions: `update(state, dt)` and `draw(ctx, state)`. State is one object.
 - Commit in small, working increments. Keep `main` runnable at every commit.
 
+## Online co-op (live-partner model)
+
+A 2-player online mode exists alongside single-player (which is unchanged and
+still the default). It is **"live-partner" co-op**, NOT shared-world:
+
+- Both clients run their own full game on the **same level**; each streams its
+  Pip's position to the peer, which draws it as a translucent buddy (`P1`/`P2`).
+- **Separate** enemies, coins, deaths, and progression — nothing is authoritative.
+- Transport: WebRTC via **PeerJS** (`peerjs` dep). The PeerJS public broker is
+  used for **signaling only** (the handshake) — there is no game server. Host
+  registers a 4-letter code; guest dials it; data then flows peer-to-peer.
+- Files: `engine/net.ts` (transport + `NetMessage`), `engine/lobby.ts` (the
+  `#ov-lobby` DOM overlay + Host/Join), `game/coop.ts` (glue: begin/sync/smooth).
+  `state.coop` (`CoopState`) holds the partner snapshot the renderer reads.
+- Entry: press `C` on the title. `screen` gains a `'lobby'` value.
+- Upgrading to true shared-world co-op (P2 stomps the same enemies) would require
+  extracting the per-player controller fields (coyote/jumpBuffer/latches/weapons/
+  super…) off the global `state` and threading them through player/dash/wall/
+  weapons — a deliberate, larger refactor. Not done.
+
 ## Non-goals (don't add unless asked)
 
-- No multiplayer, no server, no analytics, no asset/image loading pipeline.
+- No analytics, no asset/image loading pipeline. No dedicated game server (the
+  PeerJS broker does signaling only; see Online co-op above).
 - No switch to an engine (Phaser/Pixi) or to React for the game canvas.
 - No procedural level generation — levels are authored JSON.

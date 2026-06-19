@@ -10,11 +10,11 @@ const POP_LIFE = 45;
 
 /** Light any checkpoint Pip is touching and adopt it as the respawn point. */
 export function updateCheckpoints(state: GameState): void {
-  const p = state.player;
   for (const cp of state.checkpoints) {
     if (cp.active) continue;
-    // A one-tile activation band around the post.
-    if (p.x + p.w > cp.x && p.x < cp.x + TILE) {
+    // A one-tile activation band around the post — either pawn can light it.
+    const touched = state.players.some((pw) => pw.player.x + pw.player.w > cp.x && pw.player.x < cp.x + TILE);
+    if (touched) {
       cp.active = true;
       state.respawnX = cp.x;
       state.respawnY = cp.y;

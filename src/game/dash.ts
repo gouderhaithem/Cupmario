@@ -6,11 +6,11 @@
 import { sfx } from '../engine/audio';
 import { DASH_CD, DASH_FRAMES, DASH_IFRAMES, DASH_SPEED } from './constants';
 import { spawnDashDust } from './puff';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 
-export function updateDash(state: GameState): void {
-  const p = state.player;
-  const keys = state.keys;
+export function updateDash(state: GameState, pawn: Pawn): void {
+  const p = pawn.player;
+  const keys = pawn.keys;
 
   if (p.dashCd > 0) p.dashCd -= 1;
 
@@ -21,10 +21,10 @@ export function updateDash(state: GameState): void {
   // A dash fires on a fresh dash-key press (rising edge) or a left/right
   // double-tap pulse. Track the key latch independently so holding the key
   // still yields one dash, and consume the one-shot tap request each tick.
-  const keyPress = keys.dash && !state.dashLatch;
-  state.dashLatch = keys.dash;
-  const tapPress = state.dashTap;
-  state.dashTap = false;
+  const keyPress = keys.dash && !pawn.dashLatch;
+  pawn.dashLatch = keys.dash;
+  const tapPress = pawn.dashTap;
+  pawn.dashTap = false;
 
   // In the air Pip gets exactly one dash until he lands or grabs a wall; on the
   // ground it's only gated by the cooldown.

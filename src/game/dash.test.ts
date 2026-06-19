@@ -7,7 +7,7 @@ import type { GameState } from './state';
 function pressDash(state: GameState): void {
   state.dashLatch = false; // simulate a rising edge each call
   state.keys.dash = true;
-  updateDash(state);
+  updateDash(state, state.players[0]);
 }
 
 function freshState(): GameState {
@@ -67,7 +67,7 @@ describe('air-dash limit', () => {
     state.player.wallSlide = true;
     state.keys.dash = false;
     state.dashLatch = false;
-    updateDash(state);
+    updateDash(state, state.players[0]);
     expect(state.player.airDashUsed).toBe(false); // cling re-armed it
 
     // And a fresh dash can now fire off the wall.

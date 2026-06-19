@@ -3,6 +3,8 @@
 import { setMasterVolume, sfx, startBossMusic, startMusic, stopMusic } from '../engine/audio';
 import { shakeScreen } from '../engine/effects';
 import { applyTouchControls } from '../engine/input';
+import { openLobby } from '../engine/lobby';
+import { endCoop } from './coop';
 import {
   BEST_KEY,
   BOSS_INTRO,
@@ -386,6 +388,13 @@ export function handleMenuKey(state: GameState, key: string): void {
     pauseKey(state, key);
     return;
   }
+  // Co-op lobby drives itself via DOM buttons + its own Escape handler.
+  if (state.screen === 'lobby') return;
+  // 'C' on the title opens the 2-player online lobby.
+  if ((key === 'c' || key === 'C') && state.screen === 'title') {
+    openLobby(state);
+    return;
+  }
   if (state.screen === 'select') {
     menuKey(state, key);
     return;
@@ -476,6 +485,7 @@ function pauseKey(state: GameState, key: string): void {
     } else if (state.pauseIndex === 6) {
       state.paused = false; // Quit to title
       stopMusic();
+      endCoop(state); // drop any online co-op link
       state.screen = 'title';
     }
   }

@@ -7,7 +7,6 @@ import { MOVER_LAND_TOL } from './constants';
 import type { GameState } from './state';
 
 export function updateMovers(state: GameState): void {
-  const p = state.player;
   const { worldW } = state.level;
 
   for (const m of state.movers) {
@@ -36,20 +35,24 @@ export function updateMovers(state: GameState): void {
     m.dx = m.x - prevX;
     m.dy = m.y - prevY;
 
-    // Ride detection: horizontally overlapping and falling onto the top surface.
-    const hOverlap = p.x + p.w > m.x && p.x < m.x + m.w;
-    if (!hOverlap) continue;
-    const feet = p.y + p.h;
-    const onTop = p.vy >= 0 && feet >= m.y && feet <= m.y + MOVER_LAND_TOL;
-    if (!onTop) continue;
+    // Carry any pawn riding the top surface (each tested independently).
+    for (const pw of state.players) {
+      const p = pw.player;
+      // Ride detection: horizontally overlapping and falling onto the top surface.
+      const hOverlap = p.x + p.w > m.x && p.x < m.x + m.w;
+      if (!hOverlap) continue;
+      const feet = p.y + p.h;
+      const onTop = p.vy >= 0 && feet >= m.y && feet <= m.y + MOVER_LAND_TOL;
+      if (!onTop) continue;
 
-    // Snap to the surface (this also carries the rider vertically with the
-    // platform) and carry horizontally. Re-clamp to the world after the push.
-    p.y = m.y - p.h;
-    p.vy = 0;
-    p.onGround = true;
-    p.x += m.dx;
-    if (p.x < 0) p.x = 0;
-    else if (p.x > worldW - p.w) p.x = worldW - p.w;
+      // Snap to the surface (this also carries the rider vertically with the
+      // platform) and carry horizontally. Re-clamp to the world after the push.
+      p.y = m.y - p.h;
+      p.vy = 0;
+      p.onGround = true;
+      p.x += m.dx;
+      if (p.x < 0) p.x = 0;
+      else if (p.x > worldW - p.w) p.x = worldW - p.w;
+    }
   }
 }

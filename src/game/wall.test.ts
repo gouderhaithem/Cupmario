@@ -10,6 +10,7 @@ import {
   WALL_SLIDE_SPEED,
 } from './constants';
 import type { Keys, Player } from '../types';
+import { makePawn } from './state';
 import type { GameState } from './state';
 
 function player(over: Partial<Player> = {}): Player {
@@ -70,7 +71,16 @@ const level = buildLevel({
 });
 
 function stateWith(p: Player, k: Keys): GameState {
-  return { player: p, keys: k, level, wallJumpLock: 0 } as unknown as GameState;
+  const pawn = makePawn(p);
+  pawn.keys = k;
+  // reducedMotion skips the cosmetic wall-dust spawn (no puffs array on this fake state).
+  return { level, reducedMotion: true, frame: 0, players: [pawn] } as unknown as GameState;
+}
+
+/** Run one wall-cling tick on pawn[0] of a fresh fake state. */
+function runWall(p: Player, k: Keys): void {
+  const s = stateWith(p, k);
+  updateWall(s, s.players[0]);
 }
 
 describe('wallBeside', () => {
@@ -98,7 +108,7 @@ describe('wallBeside', () => {
 describe('updateWall', () => {
   it('starts a wall slide when airborne, falling, and pressing into a wall', () => {
     const p = player({ x: 8 * TILE - PLAYER_W, y: 4 * TILE, vy: 8 });
-    updateWall(stateWith(p, keys({ right: true })));
+    runWall(p, keys({ right: true }));
     expect(p.wallSlide).toBe(true);
     expect(p.wallDir).toBe(1);
     expect(p.wallCoyote).toBe(WALL_COYOTE_FRAMES);
@@ -107,31 +117,31 @@ describe('updateWall', () => {
 
   it('clamps descent to the slide speed while sliding', () => {
     const p = player({ x: 8 * TILE - PLAYER_W, y: 4 * TILE, vy: 14 });
-    updateWall(stateWith(p, keys({ right: true })));
+    runWall(p, keys({ right: true }));
     expect(p.vy).toBeLessThanOrEqual(WALL_SLIDE_SPEED);
   });
 
   it('does not slide while grounded', () => {
     const p = player({ x: 8 * TILE - PLAYER_W, y: 4 * TILE, vy: 8, onGround: true });
-    updateWall(stateWith(p, keys({ right: true })));
+    runWall(p, keys({ right: true }));
     expect(p.wallSlide).toBe(false);
   });
 
   it('does not slide when not pushing toward the wall', () => {
     const p = player({ x: 8 * TILE - PLAYER_W, y: 4 * TILE, vy: 8 });
-    updateWall(stateWith(p, keys({ left: true })));
+    runWall(p, keys({ left: true }));
     expect(p.wallSlide).toBe(false);
   });
 
   it('does not slide while rising', () => {
     const p = player({ x: 8 * TILE - PLAYER_W, y: 4 * TILE, vy: -6 });
-    updateWall(stateWith(p, keys({ right: true })));
+    runWall(p, keys({ right: true }));
     expect(p.wallSlide).toBe(false);
   });
 
   it('counts down wall coyote after leaving the wall', () => {
     const p = player({ wallCoyote: 3, x: 3 * TILE, y: 4 * TILE, vy: 8 });
-    updateWall(stateWith(p, keys()));
+    runWall(p, keys());
     expect(p.wallCoyote).toBe(2);
     expect(p.wallSlide).toBe(false);
   });

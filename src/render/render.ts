@@ -1,7 +1,7 @@
 // Top-level draw(): background -> tiles -> coins -> mushrooms -> enemies ->
 // bolts -> flag -> player -> score pops. Reads state only (golden rule #4).
 
-import { BOSS_HURT_FLASH, COLS, COMBO_FLASH_FRAMES, FLASH_FRAMES, PALETTE, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
+import { BOSS_HURT_FLASH, COLS, COMBO_FLASH_FRAMES, COOP_PARTNER_SKIN, FLASH_FRAMES, PALETTE, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
 import type { GameState } from '../game/state';
 import { isCuphead, setRenderStyle } from './style-ctx';
 import { INK } from './ink';
@@ -198,10 +198,24 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
   }
   ctx.globalAlpha = 1;
 
-  // Player (flash while invulnerable).
-  const p = state.player;
-  if (!(p.hurt > 0 && frame % 8 < 4)) {
-    drawPip(ctx, p, SKINS[state.levelIndex] ?? SKINS[0], frame);
+  // Players: pawn 0 wears the level skin; any co-op pawn wears the partner skin.
+  // Each flashes while invulnerable. Drawn in order so later pawns sit on top.
+  // A co-op pawn gets a P1/P2 nametag so the two players can tell each other apart.
+  for (let i = 0; i < state.players.length; i++) {
+    const pl = state.players[i].player;
+    if (pl.hurt > 0 && frame % 8 < 4) continue;
+    const skin = i === 0 ? SKINS[state.levelIndex] ?? SKINS[0] : COOP_PARTNER_SKIN;
+    drawPip(ctx, pl, skin, frame);
+    if (state.coop.active && state.players.length > 1) {
+      const label = i === 0 ? 'P1' : 'P2';
+      ctx.font = "8px 'Press Start 2P', monospace";
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#11112a';
+      ctx.fillText(label, pl.x + pl.w / 2 + 1, pl.y - 9 + 1);
+      ctx.fillStyle = i === 0 ? '#ffd34d' : COOP_PARTNER_SKIN.shirtHi;
+      ctx.fillText(label, pl.x + pl.w / 2, pl.y - 9);
+      ctx.textAlign = 'left';
+    }
   }
 
   // Floating score pops.
@@ -223,8 +237,9 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     const t = state.comboFlash / COMBO_FLASH_FRAMES; // 1 → 0
     const e = 1 - t; // elapsed 0 → 1
     const scale = e < 0.25 ? 0.6 + (e / 0.25) * 0.6 : 1.2 - Math.min(1, (e - 0.25) / 0.75) * 0.2;
-    const bx = p.x + p.w / 2;
-    const by = p.y - 18 - e * 16;
+    const banner = state.player; // banner tracks pawn 0 (the local player)
+    const bx = banner.x + banner.w / 2;
+    const by = banner.y - 18 - e * 16;
     ctx.save();
     ctx.globalAlpha = Math.min(1, t * 2);
     ctx.translate(bx, by);

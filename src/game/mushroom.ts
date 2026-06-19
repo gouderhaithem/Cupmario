@@ -15,18 +15,18 @@ import {
   TILE,
 } from './constants';
 import { solid } from './physics';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 import { WEAPONS, WEAPON_ORDER } from './weapons';
 
 const POP_LIFE = 40;
 
-/** Grant the next not-yet-owned weapon (and equip it). Returns the pickup label. */
-function unlockNextWeapon(state: GameState): string {
-  const next = WEAPON_ORDER.find((id) => !state.weapons.includes(id));
+/** Grant a pawn the next not-yet-owned weapon (and equip it). Returns the label. */
+function unlockNextWeapon(pawn: Pawn): string {
+  const next = WEAPON_ORDER.find((id) => !pawn.weapons.includes(id));
   if (!next) return 'POWER!';
-  state.weapons.push(next);
-  state.weaponIdx = state.weapons.length - 1;
-  state.charge = 0;
+  pawn.weapons.push(next);
+  pawn.weaponIdx = pawn.weapons.length - 1;
+  pawn.charge = 0;
   return `${WEAPONS[next].name}!`;
 }
 
@@ -46,7 +46,6 @@ export function spawnMushroom(state: GameState, cx: number, topY: number): void 
 /** Advance mushrooms (gravity + ground rest + drift) and handle pickup. */
 export function updateMushrooms(state: GameState): void {
   const { level } = state;
-  const p = state.player;
 
   for (const m of state.mushrooms) {
     if (!m.alive) continue;
@@ -73,11 +72,14 @@ export function updateMushrooms(state: GameState): void {
       m.x = Math.max(0, Math.min(level.worldW - m.w, m.x));
     }
 
-    // Pickup: AABB overlap with Pip.
-    if (p.x + p.w > m.x && p.x < m.x + m.w && p.y + p.h > m.y && p.y < m.y + m.h) {
+    // Pickup: AABB overlap with whichever pawn touches it first this tick.
+    const grabber = state.players.find(
+      (pw) => pw.player.x + pw.player.w > m.x && pw.player.x < m.x + m.w && pw.player.y + pw.player.h > m.y && pw.player.y < m.y + m.h,
+    );
+    if (grabber) {
       m.alive = false;
-      p.armed = true;
-      const label = unlockNextWeapon(state);
+      grabber.player.armed = true;
+      const label = unlockNextWeapon(grabber);
       state.score += POWER_SCORE;
       sfx('power');
       state.pops.push({

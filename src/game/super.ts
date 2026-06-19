@@ -19,25 +19,25 @@ import {
 } from './constants';
 import { damageBoss } from './boss';
 import { killEnemy } from './enemy';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 import type { Projectile } from '../types';
 import { currentWeapon } from './weapons';
 
-export function updateSuper(state: GameState): void {
-  const keys = state.keys;
+export function updateSuper(state: GameState, pawn: Pawn): void {
+  const keys = pawn.keys;
 
-  if (keys.super && !state.superLatch) {
-    state.superLatch = true;
-    if (state.superCards >= SUPER_MAX) {
-      megablast(state);
+  if (keys.super && !pawn.superLatch) {
+    pawn.superLatch = true;
+    if (pawn.superCards >= SUPER_MAX) {
+      megablast(state, pawn);
       state.runSupers += 1;
-    } else if (state.superCards >= 1) {
-      exShot(state);
-      state.superCards -= 1;
+    } else if (pawn.superCards >= 1) {
+      exShot(state, pawn);
+      pawn.superCards -= 1;
       state.runSupers += 1;
     }
   } else if (!keys.super) {
-    state.superLatch = false;
+    pawn.superLatch = false;
   }
 
   if (state.flash > 0) state.flash -= 1;
@@ -49,8 +49,8 @@ export function updateSuper(state: GameState): void {
  * peashot a lance, spread a wide blast, lobber heavy bombs, charge a giant beam,
  * homing a missile volley. Fired along Pip's facing.
  */
-function exShot(state: GameState): void {
-  const p = state.player;
+function exShot(state: GameState, pawn: Pawn): void {
+  const p = pawn.player;
   const dir = p.face;
   const muzzleY = p.y + p.h * 0.42;
   // A piercing EX bolt at scale `s`, angled `ang` rad off the facing, given damage.
@@ -76,7 +76,7 @@ function exShot(state: GameState): void {
   };
 
   const base = PLAYER_BOLT_SPEED * EX_SPEED_MULT;
-  switch (currentWeapon(state).id) {
+  switch (currentWeapon(pawn).id) {
     case 'spread':
       // Wide piercing buckshot — 7 pellets, full range (no falloff on the EX).
       for (let i = -3; i <= 3; i++) push(EX_SCALE * 0.7, i * 0.16, base * 0.85, 2);
@@ -117,7 +117,8 @@ function exShot(state: GameState): void {
 }
 
 /** Screen-clear: drop all enemy bolts, kill on-screen enemies, flash + shake. */
-function megablast(state: GameState): void {
+function megablast(state: GameState, pawn: Pawn): void {
+  const p = pawn.player;
   for (const b of state.projectiles) {
     if (b.from === 'enemy') b.alive = false;
   }
@@ -128,13 +129,13 @@ function megablast(state: GameState): void {
   }
   // Big chunk of boss damage when a MEGABLAST lands during a boss fight.
   if (state.boss && !state.boss.dead) damageBoss(state, BOSS_MEGA_DAMAGE);
-  state.superCards = 0;
+  pawn.superCards = 0;
   state.flash = FLASH_FRAMES;
   shakeScreen(state, SHAKE_HURT);
   sfx('super');
   state.pops.push({
-    x: state.player.x + state.player.w / 2,
-    y: state.player.y - 12,
+    x: p.x + p.w / 2,
+    y: p.y - 12,
     life: 50,
     text: 'MEGABLAST!',
     color: PALETTE.boltPinkHi,

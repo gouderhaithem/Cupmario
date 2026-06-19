@@ -2,6 +2,45 @@
 // only reads. Per-frame mutation here is intentional (see CLAUDE.md rules 4-5).
 
 import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Puff, Projectile, Screen, Sparkle, Style, WeaponId } from '../types';
+import type { Role } from '../engine/net';
+
+/**
+ * One controllable player ("Pawn") and all of its *per-player* controller state.
+ * Single-player has one pawn (`state.players[0]`); shared-world co-op adds a
+ * second. These fields used to live directly on `GameState`; they are proxied
+ * back onto `state` (see `attachPawnProxies`) so legacy single-player call sites
+ * keep working unchanged during the co-op migration.
+ */
+export interface Pawn {
+  player: Player;
+  keys: Keys;
+  jumpLatch: boolean;
+  coyote: number;
+  jumpBuffer: number;
+  wallJumpLock: number;
+  jumping: boolean;
+  shootLatch: boolean;
+  shootCd: number;
+  dashLatch: boolean;
+  dashTap: boolean;
+  switchLatch: boolean;
+  charge: number;
+  weapons: WeaponId[];
+  weaponIdx: number;
+  superLatch: boolean;
+  superCards: number;
+  parryLatch: boolean;
+  combo: number;
+  aimX: number;
+  aimY: number;
+}
+
+/** Live online co-op session (host-authoritative shared world). The host
+ *  simulates both pawns and streams snapshots; the guest renders them. */
+export interface CoopState {
+  active: boolean;
+  role: Role | null;
+}
 import { ASSIST_BONUS_HP, BEST_KEY, LEVEL_TIME, MAX_HP, PLAYER_H, PLAYER_W, START_LIVES } from './constants';
 import { buildLevel, spawnCheckpoints, spawnCrumbles, spawnEnemies, spawnMovers, spawnOrbs } from './level';
 import { LEVELS } from './levels';
@@ -17,6 +56,9 @@ export interface GameState {
   menuIndex: number;
   levelIndex: number;
   level: Level;
+  /** All controllable pawns. `[0]` is the local/host player; co-op adds `[1]`. */
+  players: Pawn[];
+  /** Convenience accessor for `players[0]` (proxied; see attachPawnProxies). */
   player: Player;
   enemies: Enemy[];
   movers: MovingPlatform[];
@@ -150,6 +192,8 @@ export interface GameState {
   /** Analog aim vector from a gamepad's right stick (0,0 = no analog aim). */
   aimX: number;
   aimY: number;
+  /** Online co-op link (live-partner model); inactive when playing solo. */
+  coop: CoopState;
 }
 
 export function loadBest(): number {
@@ -189,19 +233,106 @@ export function spawnPlayer(level: Level, maxHp: number = MAX_HP): Player {
   };
 }
 
+/** A fresh pawn wrapping `player`, with all controller state at rest. */
+export function makePawn(player: Player): Pawn {
+  return {
+    player,
+    keys: makeKeys(),
+    jumpLatch: false,
+    coyote: 0,
+    jumpBuffer: 0,
+    wallJumpLock: 0,
+    jumping: false,
+    shootLatch: false,
+    shootCd: 0,
+    dashLatch: false,
+    dashTap: false,
+    switchLatch: false,
+    charge: 0,
+    weapons: ['peashot'],
+    weaponIdx: 0,
+    superLatch: false,
+    superCards: 0,
+    parryLatch: false,
+    combo: 0,
+    aimX: 0,
+    aimY: 0,
+  };
+}
+
+/** Add a second co-op pawn at the level spawn (idempotent). Returns it. */
+export function addPawn(state: GameState): Pawn {
+  if (state.players.length > 1) return state.players[1];
+  const pawn = makePawn(spawnPlayer(state.level, state.maxHp));
+  state.players.push(pawn);
+  return pawn;
+}
+
+/** Drop all co-op pawns, leaving only the local player[0] (back to solo). */
+export function removeExtraPawns(state: GameState): void {
+  state.players.length = 1;
+}
+
+/** Define `state.<field>` as a live accessor onto `players[0]`'s field. */
+function proxyField<K extends keyof Pawn>(state: GameState, field: K): void {
+  Object.defineProperty(state, field, {
+    get(this: GameState): Pawn[K] {
+      return this.players[0][field];
+    },
+    set(this: GameState, value: Pawn[K]): void {
+      this.players[0][field] = value;
+    },
+    enumerable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Back the legacy single-player fields (`state.player`, `state.keys`, and the
+ * controller latches/meters) with accessors onto `players[0]`. Lets the many
+ * existing solo call sites keep reading/writing `state.X` while the simulation
+ * systems migrate to operate on an explicit `Pawn`.
+ */
+function attachPawnProxies(state: GameState): void {
+  proxyField(state, 'player');
+  proxyField(state, 'keys');
+  proxyField(state, 'jumpLatch');
+  proxyField(state, 'coyote');
+  proxyField(state, 'jumpBuffer');
+  proxyField(state, 'wallJumpLock');
+  proxyField(state, 'jumping');
+  proxyField(state, 'shootLatch');
+  proxyField(state, 'shootCd');
+  proxyField(state, 'dashLatch');
+  proxyField(state, 'dashTap');
+  proxyField(state, 'switchLatch');
+  proxyField(state, 'charge');
+  proxyField(state, 'weapons');
+  proxyField(state, 'weaponIdx');
+  proxyField(state, 'superLatch');
+  proxyField(state, 'superCards');
+  proxyField(state, 'parryLatch');
+  proxyField(state, 'combo');
+  proxyField(state, 'aimX');
+  proxyField(state, 'aimY');
+}
+
 /** Build the initial state for level 0, sitting on the title screen. */
 export function createState(): GameState {
   const levelIndex = 0;
   const level = buildLevel(LEVELS[levelIndex]);
   const settings = loadSettings();
-  return {
+  // The proxied pawn fields (player/keys/latches/meters) live on players[0];
+  // attachPawnProxies re-exposes them as `state.X`. The cast bridges the literal
+  // (which omits those fields) to GameState until the accessors are attached.
+  const state = {
     screen: 'title',
     mode: 'campaign',
     stageIndex: 0,
     menuIndex: 0,
     levelIndex,
     level,
-    player: spawnPlayer(level),
+    players: [makePawn(spawnPlayer(level))],
     enemies: spawnEnemies(level),
     movers: spawnMovers(level),
     crumbles: spawnCrumbles(level),
@@ -211,7 +342,6 @@ export function createState(): GameState {
     respawnY: level.spawnY,
     mushrooms: [],
     projectiles: [],
-    keys: makeKeys(),
     pops: [],
     puffs: [],
     sparks: [],
@@ -221,29 +351,13 @@ export function createState(): GameState {
     best: loadBest(),
     frame: 0,
     camX: 0,
-    jumpLatch: false,
-    coyote: 0,
-    jumpBuffer: 0,
-    wallJumpLock: 0,
-    jumping: false,
     shake: 0,
     hitstop: 0,
-    shootLatch: false,
-    shootCd: 0,
-    dashLatch: false,
-    dashTap: false,
-    superCards: 0,
-    superLatch: false,
-    parryLatch: false,
     flash: 0,
     burn: 0,
     boss: null,
     hazards: [],
     bossKo: 0,
-    weapons: ['peashot'],
-    weaponIdx: 0,
-    charge: 0,
-    switchLatch: false,
     runTicks: 0,
     runHits: 0,
     runParries: 0,
@@ -252,7 +366,6 @@ export function createState(): GameState {
     bestGrade: '',
     lastTime: 0,
     bestTime: 0,
-    combo: 0,
     comboFlash: 0,
     comboShown: 0,
     timeLeft: LEVEL_TIME,
@@ -267,9 +380,13 @@ export function createState(): GameState {
     showTouchControls: settings.showTouchControls,
     paused: false,
     pauseIndex: 0,
-    aimX: 0,
-    aimY: 0,
-  };
+    coop: {
+      active: false,
+      role: null,
+    },
+  } as unknown as GameState;
+  attachPawnProxies(state);
+  return state;
 }
 
 /** Load `levelIndex` into state and place the player/enemies at spawn. */

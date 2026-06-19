@@ -1,7 +1,7 @@
 // Shared data shapes for Life Quest. When a shape changes, update it here in
 // the same edit (golden rule #6).
 
-export type Screen = 'title' | 'play' | 'levelup' | 'gameover' | 'win' | 'boss' | 'select';
+export type Screen = 'title' | 'play' | 'levelup' | 'gameover' | 'win' | 'boss' | 'select' | 'lobby';
 
 /** Which sequence drives the run: the full campaign or a bosses-only rush. */
 export type GameMode = 'campaign' | 'bossrush';
@@ -559,4 +559,36 @@ export interface Boss {
   swayT: number;
   /** Rotating-arm angle accumulator (spiralShot). */
   spiralA: number;
+}
+
+/**
+ * Host→guest world snapshot for host-authoritative co-op. The host runs the one
+ * simulation and ships this each net tick; the guest overwrites its render state
+ * with it and does not simulate. Static geometry (tiles, coin positions, flag)
+ * is rebuilt locally per level, so only dynamic state travels — coins as a list
+ * of collected indices. Cosmetic-only particles (puffs/sparks/pops) are omitted.
+ */
+export interface Snapshot {
+  /** Both players' full transforms: [0] host, [1] guest. */
+  players: Player[];
+  enemies: Enemy[];
+  projectiles: Projectile[];
+  mushrooms: Mushroom[];
+  boss: Boss | null;
+  hazards: Hazard[];
+  /** Indices into level.coins that have been collected. */
+  coinsGot: number[];
+  camX: number;
+  score: number;
+  coins: number;
+  lives: number;
+  timeLeft: number;
+  comboFlash: number;
+  comboShown: number;
+  flash: number;
+  bossIntro: number;
+  bossKo: number;
+  screen: Screen;
+  levelIndex: number;
+  stageIndex: number;
 }

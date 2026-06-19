@@ -6,6 +6,7 @@ import './style.css';
 import { updateCamera } from './engine/camera';
 import { decayShake } from './engine/effects';
 import { applyTouchControls, pollGamepad, setupInput } from './engine/input';
+import { initLobby } from './engine/lobby';
 import { startLoop } from './engine/loop';
 import { PIT_MARGIN, VIEW_H, VIEW_W } from './game/constants';
 import { updateBoss } from './game/boss';
@@ -13,7 +14,8 @@ import { updateCheckpoints } from './game/checkpoint';
 import { updateCoins } from './game/coin';
 import { updateCrumbles } from './game/crumble';
 import { updateEnemies } from './game/enemy';
-import { handleMenuKey, reachFlag, loseLife } from './game/flow';
+import { handleMenuKey, reachFlag, loseLife, startStage } from './game/flow';
+import { coopIsGuest, coopTick, installCoop } from './game/coop';
 import { updateHazards } from './game/hazard';
 import { updateMovers } from './game/mover';
 import { updateMushrooms } from './game/mushroom';
@@ -67,14 +69,16 @@ function main(): void {
 
   setupInput(state, (key) => handleMenuKey(state, key));
   applyTouchControls(state.showTouchControls);
+  initLobby(state);
+  installCoop(state, (stage) => startStage(state, stage));
   setupScale();
 
   // ---- Boss-arena update: locked camera, boss patterns, instant retry ----
   const updateBossArena = (): void => {
-    updatePlayer(state);
+    for (const pawn of state.players) updatePlayer(state, pawn);
     if (updateBoss(state)) return; // contact/KO ended the frame (retry or win)
-    tryParry(state);
-    updateSuper(state);
+    for (const pawn of state.players) tryParry(state, pawn);
+    for (const pawn of state.players) updateSuper(state, pawn);
     if (updateProjectiles(state)) return; // a bolt forced a retry
     if (updateEnemies(state)) return; // a summoned add forced a retry
     if (updateHazards(state)) return; // a root pillar / floor zap forced a retry
@@ -98,6 +102,10 @@ function main(): void {
 
   // ---- Fixed-step gameplay update ----
   const update = (): void => {
+    coopTick(state); // stream input (guest) or world snapshot (host), every screen
+    // The co-op guest is non-authoritative: it renders host snapshots and never
+    // simulates, so skip the entire gameplay step on the guest.
+    if (coopIsGuest()) return;
     if (state.screen !== 'play' && state.screen !== 'boss') return;
     if (state.paused) return; // frozen behind the pause menu
 
@@ -121,15 +129,15 @@ function main(): void {
 
     if (state.timeLeft > 0) state.timeLeft -= 1; // per-level time budget
 
-    updatePlayer(state);
+    for (const pawn of state.players) updatePlayer(state, pawn);
     updateMovers(state); // move platforms + carry the player before other checks
     updateCrumbles(state); // crumbling platforms (also carry/snap the player)
     updateCoins(state);
     updateCheckpoints(state); // light posts Pip passes; move the respawn point
     updateMushrooms(state); // drift dropped power-ups + handle pickup
-    tryParry(state); // deflect pink bolts/orbs before they can resolve a hit
+    for (const pawn of state.players) tryParry(state, pawn); // deflect pink bolts/orbs before a hit resolves
     if (updateOrbs(state)) return; // unparried orb contact cost a life
-    updateSuper(state); // spend the meter: EX shot or MEGABLAST
+    for (const pawn of state.players) updateSuper(state, pawn); // spend the meter: EX shot or MEGABLAST
     if (updateProjectiles(state)) return; // a bolt cost a life this frame
     if (updateEnemies(state)) return; // lost a life this frame
 
