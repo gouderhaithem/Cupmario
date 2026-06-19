@@ -18,6 +18,7 @@ import {
   PILLAR_TILES,
   PILLAR_W,
   PILLAR_WARN,
+  PLAYER_W,
   PINKRAIN_COUNT,
   PINKRAIN_VY,
   RING_COUNT,
@@ -41,6 +42,7 @@ import {
 } from './constants';
 import { telegraphFrames } from './difficulty';
 import type { Boss, BoltStyle, Enemy, PatternName } from '../types';
+import { nearestPawn } from './state';
 import type { GameState } from './state';
 
 // Summoned-walker geometry (mirrors level.ts' patrol enemies).
@@ -75,15 +77,15 @@ function bolt(
   });
 }
 
-/** Player center, the aim target for most patterns. */
-function aimAt(state: GameState): { px: number; py: number } {
-  const p = state.player;
+/** The nearest pawn's center to the boss — the aim target for most patterns. */
+function aimAt(state: GameState, boss: Boss): { px: number; py: number } {
+  const p = nearestPawn(state, boss.x + boss.w / 2, boss.y + boss.h / 2).player;
   return { px: p.x + p.w / 2, py: p.y + p.h / 2 };
 }
 
 /** Lobbed shots in a parabola — walk under them or dash through. */
 function spitArc(state: GameState, boss: Boss): void {
-  const { px } = aimAt(state);
+  const { px } = aimAt(state, boss);
   const bx = boss.x + boss.w / 2 - BOLT_W / 2;
   const by = boss.y + boss.h * 0.7;
   const vx = (px - bx) / SPITARC_TRAVEL;
@@ -94,7 +96,7 @@ function spitArc(state: GameState, boss: Boss): void {
 
 /** A 5-way spread aimed at Pip — gap-jump or dash through it. */
 function boltFan(state: GameState, boss: Boss): void {
-  const { px, py } = aimAt(state);
+  const { px, py } = aimAt(state, boss);
   const bx = boss.x + boss.w / 2 - BOLT_W / 2;
   const by = boss.y + boss.h * 0.6;
   const base = Math.atan2(py - by, px - bx);
@@ -174,7 +176,7 @@ function laserSweep(state: GameState, _boss: Boss): void {
  * the hazard. Jump onto a platform as it crosses — the telegraph flash is the tell.
  */
 function chargeDash(state: GameState, boss: Boss): void {
-  const pc = state.player.x + state.player.w / 2;
+  const pc = nearestPawn(state, boss.x + boss.w / 2, boss.y + boss.h / 2).player.x + PLAYER_W / 2;
   const bc = boss.x + boss.w / 2;
   boss.dashDir = pc < bc ? -1 : 1;
   boss.dashPhase = 1; // moveBoss (lumber) takes the roll from here
@@ -187,7 +189,7 @@ function chargeDash(state: GameState, boss: Boss): void {
 function teleport(state: GameState, boss: Boss): void {
   const left = TILE + 4;
   const right = state.level.worldW - TILE - boss.w - 4;
-  const pc = state.player.x + state.player.w / 2;
+  const pc = nearestPawn(state, boss.x + boss.w / 2, boss.y + boss.h / 2).player.x + PLAYER_W / 2;
   boss.x = pc < state.level.worldW / 2 ? right : left; // blink away from Pip
   boss.homeY = boss.homeY > (TELEPORT_HIGH_Y + TELEPORT_LOW_Y) / 2 ? TELEPORT_HIGH_Y : TELEPORT_LOW_Y;
   boss.y = boss.homeY;
@@ -230,11 +232,11 @@ function sparkNova(state: GameState, boss: Boss): void {
  * floor — one under Pip and the rest spread across the arena. Stand in a gap; the
  * warning flash is the tell. Implemented as timed arena Hazards (see hazard.ts).
  */
-function rootPillars(state: GameState, _boss: Boss): void {
+function rootPillars(state: GameState, boss: Boss): void {
   const worldW = state.level.worldW;
   const floorTop = 10 * TILE;
   const h = PILLAR_TILES * TILE;
-  const pcx = state.player.x + state.player.w / 2;
+  const pcx = nearestPawn(state, boss.x + boss.w / 2, boss.y + boss.h / 2).player.x + PLAYER_W / 2;
   const xs = [pcx - PILLAR_W / 2];
   for (let i = 1; i < PILLAR_COUNT; i++) xs.push(((i + 0.5) / PILLAR_COUNT) * worldW - PILLAR_W / 2);
   for (const x of xs) {
@@ -300,7 +302,7 @@ function spiralShot(state: GameState, boss: Boss): void {
  * sideways to break the lock; the middle bolt is parryable.
  */
 function aimedVolley(state: GameState, boss: Boss): void {
-  const { px, py } = aimAt(state);
+  const { px, py } = aimAt(state, boss);
   const bx = boss.x + boss.w / 2 - BOLT_W / 2;
   const by = boss.y + boss.h / 2 - BOLT_H / 2;
   const base = Math.atan2(py - by, px - bx);

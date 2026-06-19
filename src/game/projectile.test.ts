@@ -29,13 +29,15 @@ function bolt(id: number, alive: boolean): Projectile {
 }
 
 function stateWith(projectiles: Projectile[]): GameState {
+  const player = { x: 0, y: 0, w: 10, h: 10, hurt: 99 };
   return {
     level,
     projectiles,
     enemies: [],
     boss: null,
     difficulty: 'normal',
-    player: { x: 0, y: 0, w: 10, h: 10, hurt: 99 },
+    player,
+    players: [{ player }],
   } as unknown as GameState;
 }
 
@@ -109,6 +111,7 @@ describe('laserSweep vs crouch', () => {
       level,
       projectiles: [beam()],
       player,
+      players: [{ player }],
       difficulty: 'normal',
       runHits: 0,
       shake: 0,

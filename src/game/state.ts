@@ -273,6 +273,41 @@ export function removeExtraPawns(state: GameState): void {
   state.players.length = 1;
 }
 
+/**
+ * Re-place the co-op pawns ([1+]) at the current level's spawn after pawn 0 has
+ * been (re)spawned by a flow transition. Each keeps its own unlocked weapons and
+ * armed state; positions are staggered so the pair doesn't stack. No-op solo.
+ */
+export function respawnExtraPawns(state: GameState): void {
+  const anchor = state.players[0].player; // pawn 0 has just been placed
+  for (let i = 1; i < state.players.length; i++) {
+    const old = state.players[i];
+    const pawn = makePawn(spawnPlayer(state.level, state.maxHp));
+    pawn.player.x = anchor.x + i * (PLAYER_W + 8); // beside the partner
+    pawn.player.y = anchor.y;
+    pawn.player.armed = old.player.armed;
+    pawn.weapons = old.weapons;
+    pawn.weaponIdx = old.weaponIdx;
+    state.players[i] = pawn;
+  }
+}
+
+/** The pawn whose center is closest to (x, y) — used for enemy/boss targeting. */
+export function nearestPawn(state: GameState, x: number, y: number): Pawn {
+  let best = state.players[0];
+  let bestD = Infinity;
+  for (const pw of state.players) {
+    const dx = pw.player.x + pw.player.w / 2 - x;
+    const dy = pw.player.y + pw.player.h / 2 - y;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = pw;
+    }
+  }
+  return best;
+}
+
 /** Define `state.<field>` as a live accessor onto `players[0]`'s field. */
 function proxyField<K extends keyof Pawn>(state: GameState, field: K): void {
   Object.defineProperty(state, field, {

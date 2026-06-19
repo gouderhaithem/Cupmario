@@ -39,6 +39,7 @@ import {
 import { telegraphFrames } from './difficulty';
 import { bossDefeated, hitPlayer } from './flow';
 import { runPattern } from './patterns';
+import { nearestPawn } from './state';
 import type { GameState } from './state';
 import type { Boss, BossConfig, BossSide, Level } from '../types';
 
@@ -215,7 +216,7 @@ function movePlanted(_state: GameState, boss: Boss): void {
  */
 function moveLumber(state: GameState, boss: Boss): void {
   const { left, right } = arenaBounds(state, boss);
-  const p = state.player;
+  const p = nearestPawn(state, boss.x + boss.w / 2, boss.y + boss.h / 2).player;
   boss.y = boss.homeY;
   if (boss.dashPhase === 0) {
     const targetX = Math.max(left, Math.min(right, p.x + p.w / 2 - boss.w / 2));
@@ -329,16 +330,18 @@ export function updateBoss(state: GameState): boolean {
     }
   }
 
-  // Contact damage — a boss is never stompable.
-  const p = state.player;
-  if (
-    p.hurt <= 0 &&
-    p.x + p.w > boss.x &&
-    p.x < boss.x + boss.w &&
-    p.y + p.h > boss.y &&
-    p.y < boss.y + boss.h
-  ) {
-    if (hitPlayer(state)) return true;
+  // Contact damage — a boss is never stompable; it can hit either pawn.
+  for (const pw of state.players) {
+    const p = pw.player;
+    if (
+      p.hurt <= 0 &&
+      p.x + p.w > boss.x &&
+      p.x < boss.x + boss.w &&
+      p.y + p.h > boss.y &&
+      p.y < boss.y + boss.h
+    ) {
+      if (hitPlayer(state, pw)) return true;
+    }
   }
 
   return false;

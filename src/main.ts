@@ -83,7 +83,7 @@ function main(): void {
     if (updateEnemies(state)) return; // a summoned add forced a retry
     if (updateHazards(state)) return; // a root pillar / floor zap forced a retry
 
-    if (state.player.y > state.level.worldH + PIT_MARGIN) {
+    if (state.players.some((pw) => pw.player.y > state.level.worldH + PIT_MARGIN)) {
       loseLife(state); // on the boss screen this is an instant retry
       return;
     }
@@ -141,14 +141,14 @@ function main(): void {
     if (updateProjectiles(state)) return; // a bolt cost a life this frame
     if (updateEnemies(state)) return; // lost a life this frame
 
-    // Fell into a pit.
-    if (state.player.y > state.level.worldH + PIT_MARGIN) {
+    // Fell into a pit — any pawn dropping below costs a (shared) life.
+    if (state.players.some((pw) => pw.player.y > state.level.worldH + PIT_MARGIN)) {
       loseLife(state);
       return;
     }
 
-    // Reached the goal flag.
-    if (state.player.x + state.player.w / 2 >= state.level.flagX) {
+    // Reached the goal flag — either pawn touching it clears the level for both.
+    if (state.players.some((pw) => pw.player.x + pw.player.w / 2 >= state.level.flagX)) {
       reachFlag(state);
       return;
     }

@@ -59,7 +59,6 @@ function inWall(state: GameState, b: Projectile): boolean {
  */
 export function updateProjectiles(state: GameState): boolean {
   const { level } = state;
-  const p = state.player;
   let lostLife = false;
 
   for (const b of state.projectiles) {
@@ -79,18 +78,16 @@ export function updateProjectiles(state: GameState): boolean {
       b.life = (b.life ?? 0) - 1;
       // Crouch shrinks Pip's real hitbox (see updateCrouch), so a ducked profile
       // already slips under a sweeping beam — no separate duck offset needed.
-      if (
-        p.hurt <= 0 &&
-        b.x + b.w > p.x &&
-        b.x < p.x + p.w &&
-        b.y + b.h > p.y &&
-        b.y < p.y + p.h
-      ) {
-        if (hitPlayer(state)) {
-          lostLife = true;
-          break;
+      for (const pw of state.players) {
+        const p = pw.player;
+        if (p.hurt <= 0 && b.x + b.w > p.x && b.x < p.x + p.w && b.y + b.h > p.y && b.y < p.y + p.h) {
+          if (hitPlayer(state, pw)) {
+            lostLife = true;
+            break;
+          }
         }
       }
+      if (lostLife) break;
       continue;
     }
 
@@ -130,14 +127,16 @@ export function updateProjectiles(state: GameState): boolean {
         }
       }
     } else {
-      // Enemy bolt: hurt Pip unless he's mid-invulnerability.
-      if (p.hurt <= 0 && b.x + b.w > p.x && b.x < p.x + p.w && b.y + b.h > p.y && b.y < p.y + p.h) {
-        b.alive = false;
-        if (hitPlayer(state)) {
-          lostLife = true;
+      // Enemy bolt: hurt the first pawn it overlaps (unless mid-invulnerability).
+      for (const pw of state.players) {
+        const p = pw.player;
+        if (p.hurt <= 0 && b.x + b.w > p.x && b.x < p.x + p.w && b.y + b.h > p.y && b.y < p.y + p.h) {
+          b.alive = false;
+          if (hitPlayer(state, pw)) lostLife = true;
           break;
         }
       }
+      if (lostLife) break;
     }
   }
 

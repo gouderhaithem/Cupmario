@@ -25,12 +25,12 @@ import type { Stage } from './levels';
 import { makeBoss, resetBoss } from './boss';
 import { gradeStage } from './grade';
 import { buildSelectEntries } from './select';
-import { loadLevel, makeKeys, spawnPlayer } from './state';
+import { loadLevel, makeKeys, respawnExtraPawns, spawnPlayer } from './state';
 import { saveSettings } from './settings';
 import { cycleDifficulty, isAssist } from './difficulty';
 import { ASSIST_BONUS_HP, MAX_HP } from './constants';
 import type { Difficulty } from '../types';
-import type { GameState } from './state';
+import type { GameState, Pawn } from './state';
 import { buildBossArena, spawnCrumbles, spawnEnemies, spawnMovers, spawnOrbs } from './level';
 
 const isPlaying = (state: GameState) => () => state.screen === 'play';
@@ -146,6 +146,7 @@ function enterRunLevel(state: GameState, levelIndex: number): void {
   const keptArmed = state.player.armed;
   loadLevel(state, levelIndex);
   state.player.armed = keptArmed;
+  respawnExtraPawns(state); // co-op: place player 2+ at the new level's spawn
   state.coins = 0;
   state.screen = 'play';
   startMusic(state.levelIndex, isPlaying(state));
@@ -185,6 +186,7 @@ export function loseLife(state: GameState): void {
   state.player = spawnPlayer(state.level, state.maxHp);
   state.player.x = state.respawnX;
   state.player.y = state.respawnY;
+  respawnExtraPawns(state); // co-op: bring player 2+ back at the respawn point too
   state.enemies = spawnEnemies(state.level);
   state.movers = spawnMovers(state.level);
   state.crumbles = spawnCrumbles(state.level);
@@ -206,8 +208,8 @@ export function loseLife(state: GameState): void {
  * 1 HP and grants invulnerability frames; only at 0 HP does Pip lose a life.
  * Returns true if a life was lost (caller should stop the frame).
  */
-export function hitPlayer(state: GameState): boolean {
-  const p = state.player;
+export function hitPlayer(state: GameState, pawn: Pawn = state.players[0]): boolean {
+  const p = pawn.player;
   state.runHits += 1;
   p.hp -= 1;
   shakeScreen(state, SHAKE_HURT);
@@ -266,6 +268,7 @@ export function enterBoss(state: GameState, bossIndex: number): void {
   state.level = buildBossArena(cfg);
   state.boss = makeBoss(cfg, state.level, bossIndex);
   state.player = spawnPlayer(state.level, state.maxHp);
+  respawnExtraPawns(state); // co-op: both players drop into the arena together
   state.enemies = [];
   state.movers = [];
   state.crumbles = [];
@@ -303,6 +306,7 @@ export function enterBoss(state: GameState, bossIndex: number): void {
 export function bossRetry(state: GameState): void {
   if (state.boss) resetBoss(state.boss);
   state.player = spawnPlayer(state.level, state.maxHp);
+  respawnExtraPawns(state); // co-op: both players retry the arena together
   state.enemies = [];
   state.projectiles = [];
   state.hazards = [];

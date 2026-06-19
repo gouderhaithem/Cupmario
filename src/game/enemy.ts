@@ -48,6 +48,7 @@ import type { EnemyArm } from './constants';
 import { hitPlayer } from './flow';
 import { spawnMushroom } from './mushroom';
 import { solid } from './physics';
+import { nearestPawn } from './state';
 import type { GameState } from './state';
 import type { Enemy } from '../types';
 
@@ -179,7 +180,7 @@ function patrol(state: GameState, e: Enemy): void {
  * wall or ledge, after which it cools down and resumes stalking.
  */
 function updateCharger(state: GameState, e: Enemy): void {
-  const p = state.player;
+  const p = nearestPawn(state, e.x + e.w / 2, e.y + e.h / 2).player;
   const ecx = e.x + e.w / 2;
   const dx = p.x + p.w / 2 - ecx;
 
@@ -219,12 +220,13 @@ function updateCharger(state: GameState, e: Enemy): void {
  * Returns true if the player lost a life this frame (caller should stop).
  */
 export function updateEnemies(state: GameState): boolean {
-  const p = state.player;
-  const pcx = p.x + p.w / 2;
-  const pcy = p.y + p.h / 2;
-
   for (const e of state.enemies) {
     if (!e.alive) continue;
+
+    // Each enemy aims at whichever pawn is nearest to it.
+    const tgt = nearestPawn(state, e.x + e.w / 2, e.y + e.h / 2).player;
+    const pcx = tgt.x + tgt.w / 2;
+    const pcy = tgt.y + tgt.h / 2;
 
     if (e.kind === 'flyer' || e.kind === 'bomber') {
       // Sine-path flight (shared by the harmless Drone and the Bomber).
@@ -238,7 +240,7 @@ export function updateEnemies(state: GameState): boolean {
       if (e.kind === 'bomber') {
         if (e.shootCd > 0) e.shootCd -= 1;
         const dx = pcx - (e.x + e.w / 2);
-        if (e.shootCd <= 0 && Math.abs(dx) <= BOMBER_AIM_X && p.y > e.y) {
+        if (e.shootCd <= 0 && Math.abs(dx) <= BOMBER_AIM_X && tgt.y > e.y) {
           fireBomb(state, e);
           e.shootCd = BOMBER_DROP_CD;
         }
@@ -271,25 +273,31 @@ export function updateEnemies(state: GameState): boolean {
       }
     }
 
-    // Player overlap (small insets so contact feels fair).
-    const overlap =
-      p.x + p.w > e.x + 4 && p.x < e.x + e.w - 4 && p.y + p.h > e.y + 4 && p.y < e.y + e.h;
-    if (!overlap) continue;
+    // Contact resolves against each pawn: a stomp from above kills, otherwise a
+    // side/below hit hurts that pawn. (Small insets so contact feels fair.)
+    for (const pw of state.players) {
+      const p = pw.player;
+      const overlap =
+        p.x + p.w > e.x + 4 && p.x < e.x + e.w - 4 && p.y + p.h > e.y + 4 && p.y < e.y + e.h;
+      if (!overlap) continue;
 
-    const fromTop = p.y + p.h - e.y < STOMP_TOP && p.vy > 0;
-    if (fromTop) {
-      state.combo = Math.min(state.combo + 1, STOMP_COMBO_CAP);
-      // A real chain (≥2) fires the "COMBO ×N" banner; the stomp pitch climbs a
-      // few semitones per link so a chain audibly escalates.
-      if (state.combo >= 2) {
-        state.comboFlash = COMBO_FLASH_FRAMES;
-        state.comboShown = state.combo;
+      const fromTop = p.y + p.h - e.y < STOMP_TOP && p.vy > 0;
+      if (fromTop) {
+        pw.combo = Math.min(pw.combo + 1, STOMP_COMBO_CAP);
+        // A real chain (≥2) fires the "COMBO ×N" banner; the stomp pitch climbs a
+        // few semitones per link so a chain audibly escalates.
+        if (pw.combo >= 2) {
+          state.comboFlash = COMBO_FLASH_FRAMES;
+          state.comboShown = pw.combo;
+        }
+        killEnemy(state, e, 2 ** (pw.combo - 1), pw.combo - 1);
+        p.vy = STOMP_BOUNCE;
+        hitStop(state, HITSTOP_STOMP);
+        break; // enemy is dead — stop testing other pawns
+      } else if (p.hurt <= 0) {
+        if (hitPlayer(state, pw)) return true;
+        break; // this pawn absorbed the contact this frame
       }
-      killEnemy(state, e, 2 ** (state.combo - 1), state.combo - 1);
-      p.vy = STOMP_BOUNCE;
-      hitStop(state, HITSTOP_STOMP);
-    } else if (p.hurt <= 0) {
-      if (hitPlayer(state)) return true;
     }
   }
 

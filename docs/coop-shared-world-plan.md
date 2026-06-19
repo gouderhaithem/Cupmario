@@ -93,8 +93,18 @@ mover/crumble carry, hazard contact, boss contact — iterate every pawn.
   is the user's manual test. Guest can't double-tap-dash (gesture isn't relayed;
   dash key works). Combat/flag still pawn-0 (Phase D) so only the host can take
   damage / clear; that's expected until D.
-- **D — Shared rules.** Progression / lives / flag-clear / boss-KO / death &
-  respawn (see decisions).
+- **D — Combat + rules. ✅ DONE (shared lives interim).** `hitPlayer(state, pawn)`
+  is pawn-aware; enemy contact, enemy bolts, beams, hazards, orbs, and boss
+  contact all resolve per-pawn. Enemy/boss AI (`aimAt`, charger, bomber/turret/
+  mortar/shooter, lumber track) targets the **nearest pawn** (`nearestPawn`).
+  Stomp combo is per-pawn. `respawnExtraPawns` brings every pawn back beside
+  pawn 0 on level load / boss entry / retry / death, so both spawn into the boss
+  arena together. Either pawn reaching the flag clears; any pawn in a pit costs a
+  life. **Shared boss now works: both fire into the one shared boss, combined
+  damage, KO advances both** — the original report is fixed. 103 tests pass.
+  **Still interim:** lives are a SHARED pool (not per-player as decided) and the
+  HUD shows pawn 0's hp/lives only — per-player lives + a two-player HUD is the
+  remaining polish. Networking still needs the user's live two-peer test.
 - **E — Polish.** Guest-side prediction + interpolation, disconnect/host-migration,
   lobby copy, grade handling in co-op.
 
