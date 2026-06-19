@@ -237,6 +237,57 @@ const LEVEL_TRACKS: Track[] = [
     compType: 'triangle',
     punch: 1,
   },
+  // 4 (TIDAL CAVERN) — lilting G-major waltz feel (I–IV–ii–V).
+  {
+    bpm: 156,
+    keyRoot: 67,
+    bassRoot: 43,
+    prog: [{ r: 0, q: 'maj' }, { r: 5, q: 'maj' }, { r: 2, q: 'min' }, { r: 7, q: 'dom7' }],
+    lead: [
+      7, r, 11, 7, r, 9, 7, r,
+      5, r, 9, 12, 9, r, 5, r,
+      2, r, 5, 9, 7, r, 5, r,
+      11, r, 7, 11, 14, r, 7, r,
+    ],
+    bassType: 'triangle',
+    leadType: 'square',
+    compType: 'triangle',
+    punch: 1,
+  },
+  // 5 (EMBER FORGE) — hot, driving E-minor (i–VI–III–V).
+  {
+    bpm: 176,
+    keyRoot: 64,
+    bassRoot: 40,
+    prog: [{ r: 0, q: 'min' }, { r: 8, q: 'maj' }, { r: 3, q: 'maj' }, { r: 7, q: 'dom7' }],
+    lead: [
+      0, 0, r, 7, 5, r, 3, r,
+      8, r, 7, 5, 3, r, 0, r,
+      3, r, 7, 10, 7, r, 3, r,
+      7, r, 11, 7, 14, r, 7, r,
+    ],
+    bassType: 'sawtooth',
+    leadType: 'square',
+    compType: 'triangle',
+    punch: 1.1,
+  },
+  // 6 (THE GLITCH GATE) — tense, chromatic B-minor (i–bII–i–V7).
+  {
+    bpm: 168,
+    keyRoot: 71,
+    bassRoot: 47,
+    prog: [{ r: 0, q: 'min' }, { r: 1, q: 'maj' }, { r: 0, q: 'min' }, { r: 7, q: 'dom7' }],
+    lead: [
+      0, r, 3, 0, r, 6, 5, r,
+      1, r, 5, 8, 6, r, 1, r,
+      0, r, 3, 7, 6, r, 3, r,
+      7, r, 10, 7, 11, r, 7, r,
+    ],
+    bassType: 'sawtooth',
+    leadType: 'sawtooth',
+    compType: 'triangle',
+    punch: 1.1,
+  },
 ];
 
 // Driving D-minor boss combo (i–i–VI–V7) — sawtooth lead/bass, harder kit.

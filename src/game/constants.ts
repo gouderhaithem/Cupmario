@@ -502,4 +502,10 @@ export const SKINS: Skin[] = [
   { hair: '#e8a23f', shirt: '#6ad1ff', shirtHi: '#8fdcff', pants: '#3a5a8a', shoe: '#2a2a3a', brim: '#c9852f' },
   { hair: '#c0392b', shirt: '#3fb874', shirtHi: '#7ee6a8', pants: '#2e1f4a', shoe: '#1a1226', brim: '#922b21' },
   { hair: '#1a1a1a', shirt: '#d4a017', shirtHi: '#ffd34d', pants: '#3a2a1a', shoe: '#1a1226', brim: '#8a6a0f' },
+  // 3 — TIDAL CAVERN: teal diver
+  { hair: '#0e7c86', shirt: '#1fb6c9', shirtHi: '#6ee8f2', pants: '#0c3a4a', shoe: '#08222b', brim: '#0a5a63' },
+  // 4 — EMBER FORGE: molten orange
+  { hair: '#7a1f0a', shirt: '#ff6a2b', shirtHi: '#ffb05c', pants: '#3a1408', shoe: '#1a0a04', brim: '#a83410' },
+  // 5 — THE GLITCH GATE: neon magenta
+  { hair: '#2a0a3a', shirt: '#e83fb0', shirtHi: '#ff8fe0', pants: '#1a0a2a', shoe: '#0c0418', brim: '#8a1f6a' },
 ];

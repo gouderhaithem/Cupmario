@@ -1,0 +1,44 @@
+{
+  "theme": "cavern",
+  "flagCol": 77,
+  "_name": "TIDAL CAVERN",
+  "_focus": "Moving platforms — every wide pit is crossed by a horizontal ferry. Ride, dodge the flyer, hop off in time.",
+  "_pacing": "0-8 intro ferry tutorial · 14-22 calm + optional crumble secret · 28-46 ferry chain with enemies · 52-69 longer ferries + a turret · 70-77 final 3-tile leap to flag.",
+  "pits": [[9, 13], [23, 27], [34, 38], [47, 51], [60, 63], [70, 72]],
+  "plats": [
+    [8, 17, 3], [6, 18, 3],
+    [8, 30, 3], [6, 31, 2],
+    [8, 43, 3],
+    [8, 55, 3]
+  ],
+  "coins": [
+    [3, 9], [5, 8], [7, 9],
+    [11, 8], [12, 8],
+    [16, 9], [18, 7], [19, 5], [20, 9],
+    [25, 8], [26, 8],
+    [31, 5], [32, 5],
+    [30, 9], [33, 9],
+    [36, 8], [37, 8],
+    [41, 9], [44, 7], [45, 9],
+    [49, 8], [50, 8],
+    [54, 9], [56, 6], [58, 9],
+    [61, 8], [62, 8],
+    [66, 9], [68, 9],
+    [71, 7],
+    [75, 9]
+  ],
+  "enemyCols": [5, 16, 30, 44, 57, 67],
+  "flyerCols": [20, 52],
+  "turretCols": [65],
+  "qblocks": [[16, 7]],
+  "powBlocks": [[43, 7]],
+  "crumbles": [[6, 33, 2]],
+  "checkpointCols": [28, 52],
+  "movers": [
+    [9, 9, 2, "h", 3, 1.8],
+    [9, 23, 2, "h", 3, 1.9],
+    [9, 34, 2, "h", 3, 2.0],
+    [9, 47, 2, "h", 4, 2.0],
+    [9, 60, 2, "h", 2, 1.8]
+  ]
+}
