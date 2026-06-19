@@ -423,7 +423,8 @@ export type PatternName =
   // Per-boss signature gimmicks (§ boss redesign):
   | 'rootPillars' // BARKBROOD / RIME: telegraphed ground eruptions (roots / frost spikes)
   | 'floorPulse' // electrified/hazard floor segments (reusable library pattern)
-  | 'spiralShot'; // a rotating arm of bolts (reusable library pattern)
+  | 'spiralShot' // a rotating arm of bolts (THE OVERCLOCK's signature)
+  | 'aimedVolley'; // THE OVERCLOCK: a fast, tight burst that locks onto Pip
 
 /**
  * How a grounded boss moves on the arena floor:
@@ -431,7 +432,7 @@ export type PatternName =
  *   lumber  — slow ground walk that tracks Pip, then charge-rolls across (GRANITE, the golem).
  *   stoke   — shuffles side to side around its center (RIME, the ice spire).
  */
-export type BossMoveMode = 'planted' | 'lumber' | 'stoke' | 'hop';
+export type BossMoveMode = 'planted' | 'lumber' | 'stoke' | 'hop' | 'orbit';
 
 /** Which side of the arena a boss makes its home (defaults to center). */
 export type BossSide = 'center' | 'left' | 'right';
@@ -463,7 +464,7 @@ export interface BossPhase {
 }
 
 /** Visual silhouette for a boss (drives the whole body in the sprite). */
-export type BossShape = 'tree' | 'rock' | 'crystal';
+export type BossShape = 'tree' | 'rock' | 'crystal' | 'core';
 
 /** Per-boss color set so each fight looks distinct (chosen by boss index). */
 export interface BossSkin {

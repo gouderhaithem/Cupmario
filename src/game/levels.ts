@@ -8,6 +8,7 @@ import level3 from '../levels/level3.json';
 import boss1 from '../levels/boss1.json';
 import boss2 from '../levels/boss2.json';
 import boss3 from '../levels/boss3.json';
+import boss4 from '../levels/boss4.json';
 
 // JSON is imported as widened types (e.g. number[][], string); the data matches
 // LevelConfig by construction, so assert through unknown.
@@ -17,11 +18,13 @@ export const LEVELS: LevelConfig[] = [
   level3 as unknown as LevelConfig,
 ];
 
-// Bosses, in arc order: BARKBROOD (tree) → GRANITE (stone golem) → RIME (ice, finale).
+// Bosses, in arc order: BARKBROOD (tree) → GRANITE (stone golem) → RIME (ice)
+// → THE OVERCLOCK (airborne rogue core, the true finale).
 export const BOSSES: BossConfig[] = [
   boss1 as unknown as BossConfig,
   boss2 as unknown as BossConfig,
   boss3 as unknown as BossConfig,
+  boss4 as unknown as BossConfig,
 ];
 
 /** One stage of the campaign: a run level or a boss arena. */
@@ -38,7 +41,8 @@ export const CAMPAIGN: Stage[] = [
   { kind: 'level', level: 1 },
   { kind: 'boss', boss: 1 }, // GRANITE
   { kind: 'level', level: 2 },
-  { kind: 'boss', boss: 2 }, // RIME (finale)
+  { kind: 'boss', boss: 2 }, // RIME
+  { kind: 'boss', boss: 3 }, // THE OVERCLOCK — airborne true finale, straight after RIME
 ];
 
 /** Boss Rush (§11.4): every boss back-to-back, no run levels. */

@@ -33,6 +33,7 @@ import {
   SPIRAL_STEP,
   SPITARC_TRAVEL,
   SPITARC_VY,
+  VOLLEY_SPEED,
   TELEPORT_FLASH,
   TELEPORT_HIGH_Y,
   TELEPORT_LOW_Y,
@@ -293,6 +294,24 @@ function spiralShot(state: GameState, boss: Boss): void {
   }
 }
 
+/**
+ * THE OVERCLOCK's lock-on: a tight, fast burst aimed dead at Pip, each bolt a
+ * touch faster than the last so the stream rakes toward his position. Strafe
+ * sideways to break the lock; the middle bolt is parryable.
+ */
+function aimedVolley(state: GameState, boss: Boss): void {
+  const { px, py } = aimAt(state);
+  const bx = boss.x + boss.w / 2 - BOLT_W / 2;
+  const by = boss.y + boss.h / 2 - BOLT_H / 2;
+  const base = Math.atan2(py - by, px - bx);
+  for (let i = 0; i < 5; i++) {
+    const sp = VOLLEY_SPEED * (0.78 + i * 0.11);
+    const a = base + (i - 2) * 0.05; // very tight spread
+    bolt(state, boss, bx, by, Math.cos(a) * sp, Math.sin(a) * sp, { parryable: i === 2 });
+  }
+  sfx('shoot');
+}
+
 const PATTERNS: Record<PatternName, (state: GameState, boss: Boss) => void> = {
   spitArc,
   boltFan,
@@ -307,6 +326,7 @@ const PATTERNS: Record<PatternName, (state: GameState, boss: Boss) => void> = {
   rootPillars,
   floorPulse,
   spiralShot,
+  aimedVolley,
 };
 
 /** Run a named pattern. Unknown names are ignored (data is validated upstream). */

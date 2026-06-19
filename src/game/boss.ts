@@ -24,6 +24,10 @@ import {
   FLASH_FRAMES,
   HITSTOP_STOMP,
   LUMBER_TRACK,
+  ORBIT_CY,
+  ORBIT_RX,
+  ORBIT_RY,
+  ORBIT_SPEED,
   PALETTE,
   SHAKE_HURT,
   SHAKE_STOMP,
@@ -147,12 +151,25 @@ function arenaBounds(state: GameState, boss: Boss): { left: number; right: numbe
   return { left: TILE + 4, right: state.level.worldW - TILE - boss.w - 4 };
 }
 
-/** Move the boss this tick, by its move mode (all grounded). */
+/** Move the boss this tick, by its move mode. */
 function moveBoss(state: GameState, boss: Boss): void {
   if (boss.moveMode === 'lumber') return moveLumber(state, boss);
   if (boss.moveMode === 'stoke') return moveStoke(state, boss);
   if (boss.moveMode === 'hop') return moveHop(state, boss);
+  if (boss.moveMode === 'orbit') return moveOrbit(state, boss);
   movePlanted(state, boss);
+}
+
+/**
+ * THE OVERCLOCK (rogue core): the one airborne boss. It weaves a figure-8 through
+ * mid-air around the arena center — never grounded — so it must be hit on the move
+ * (the run-and-gun auto-aim tracks it). Distinct from every grounded boss's shuffle.
+ */
+function moveOrbit(state: GameState, boss: Boss): void {
+  const { left, right } = arenaBounds(state, boss);
+  boss.swayT += ORBIT_SPEED;
+  boss.x = Math.max(left, Math.min(right, boss.homeX + Math.sin(boss.swayT) * ORBIT_RX));
+  boss.y = ORBIT_CY + Math.sin(boss.swayT * 2) * ORBIT_RY; // figure-8 weave
 }
 
 /**

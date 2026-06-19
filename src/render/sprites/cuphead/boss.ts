@@ -220,6 +220,54 @@ function drawCrystalInk(ctx: CanvasRenderingContext2D, boss: Boss, x: number, y:
   ctx.restore();
 }
 
+/** THE OVERCLOCK: an airborne glitch-core — orbiting shell segments, a throbbing
+ *  ink eye, pulsing magenta spokes, and a counter-spinning crown of spikes. */
+function drawCoreInk(ctx: CanvasRenderingContext2D, boss: Boss, x: number, y: number, w: number, h: number, frame: number, boil: boolean): void {
+  const s = boss.skin;
+  const o = { frame, boil };
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const rad = Math.min(w, h) * 0.42;
+  const spin = frame * 0.04;
+
+  // Orbiting ring of shell segments.
+  for (let i = 0; i < 8; i++) {
+    const a = spin + (i / 8) * Math.PI * 2;
+    inkEllipse(ctx, cx + Math.cos(a) * rad * 1.12, cy + Math.sin(a) * rad * 1.12, 6, 6, i % 2 ? s.bodyDk : s.body, { ...o, seed: i });
+  }
+  // Shell sphere.
+  inkEllipse(ctx, cx, cy, rad, rad, s.bodyDk, { ...o, seed: 20 });
+  inkEllipse(ctx, cx, cy, rad * 0.78, rad * 0.78, s.body, { ...o, seed: 21 });
+
+  // Pulsing magenta energy spokes.
+  ctx.save();
+  ctx.globalAlpha = 0.5 + Math.sin(frame * 0.2) * 0.4;
+  ctx.strokeStyle = s.accent;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 6; i++) {
+    const a = -spin * 1.3 + (i / 6) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * rad * 0.74, cy + Math.sin(a) * rad * 0.74);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Throbbing single eye-core.
+  const core = rad * 0.36 * (1 + Math.sin(frame * 0.25) * 0.12);
+  inkEllipse(ctx, cx, cy, core, core, s.eye, { ...o, seed: 22 });
+  softHi(ctx, cx - core * 0.3, cy - core * 0.3, core * 0.4, core * 0.4, PAPER.white, 0.9);
+
+  // Counter-rotating crown of charged spikes.
+  for (let i = 0; i < 3; i++) {
+    const a = -spin + (i / 3) * Math.PI * 2;
+    const tx = cx + Math.cos(a) * rad * 1.3;
+    const ty = cy + Math.sin(a) * rad * 1.3;
+    inkTri(ctx, tx - 5, ty + 6, tx, ty - 9, tx + 5, ty + 6, s.crown, { ...o, seed: 30 + i });
+  }
+}
+
 export function drawBossInk(ctx: CanvasRenderingContext2D, boss: Boss, frame: number, boil: boolean): void {
   const { x, y, w, h, shape } = boss;
 
@@ -244,6 +292,7 @@ export function drawBossInk(ctx: CanvasRenderingContext2D, boss: Boss, frame: nu
 
   if (shape === 'tree') drawTreeInk(ctx, boss, x, y, w, h, frame, boil);
   else if (shape === 'rock') drawRockInk(ctx, boss, x, y, w, h, frame, boil);
+  else if (shape === 'core') drawCoreInk(ctx, boss, x, y, w, h, frame, boil);
   else drawCrystalInk(ctx, boss, x, y, w, h, frame, boil);
 
   // Hurt flash.

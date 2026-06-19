@@ -220,9 +220,80 @@ function drawCrystal(
 }
 
 /**
- * Paint the grounded boss: a telegraph wind-up aura, a floor shadow, the
- * shape-specific body, then a white hurt-flash wash. All colors come from
- * `boss.skin`; `boss.shape` swaps the whole silhouette.
+ * THE OVERCLOCK, ROGUE CORE: an airborne glitch-machine. A rotating ring of
+ * shell segments orbits a dark sphere, magenta energy spokes pulse from the
+ * center, a charged-cyan eye-core throbs, and a counter-rotating crown of
+ * yellow spikes crackles around it. All motion is frame-driven (it hovers).
+ */
+function drawCore(
+  ctx: CanvasRenderingContext2D,
+  boss: Boss,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  frame: number,
+): void {
+  const s = boss.skin;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const rad = Math.min(w, h) * 0.42;
+  const spin = frame * 0.04;
+
+  // Outer rotating ring of shell segments.
+  for (let i = 0; i < 8; i++) {
+    const a = spin + (i / 8) * Math.PI * 2;
+    rect(ctx, cx + Math.cos(a) * rad * 1.12 - 5, cy + Math.sin(a) * rad * 1.12 - 5, 10, 10, i % 2 ? s.bodyDk : s.body);
+  }
+
+  // Shell sphere (dark rim, mid body).
+  ctx.fillStyle = s.bodyDk;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rad, rad, 0, 0, 7);
+  ctx.fill();
+  ctx.fillStyle = s.body;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rad * 0.8, rad * 0.8, 0, 0, 7);
+  ctx.fill();
+
+  // Pulsing magenta energy spokes radiating from the core.
+  ctx.save();
+  ctx.globalAlpha = 0.5 + Math.sin(frame * 0.2) * 0.4;
+  ctx.strokeStyle = s.accent;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 6; i++) {
+    const a = -spin * 1.3 + (i / 6) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * rad * 0.78, cy + Math.sin(a) * rad * 0.78);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Throbbing eye-core.
+  const core = rad * 0.34 * (1 + Math.sin(frame * 0.25) * 0.12);
+  ctx.fillStyle = s.eye;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, core, core, 0, 0, 7);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, core * 0.45, core * 0.45, 0, 0, 7);
+  ctx.fill();
+
+  // Counter-rotating crown of charged spikes.
+  for (let i = 0; i < 3; i++) {
+    const a = -spin + (i / 3) * Math.PI * 2;
+    const tx = cx + Math.cos(a) * rad * 1.28;
+    const ty = cy + Math.sin(a) * rad * 1.28;
+    tri(ctx, tx - 5, ty + 6, tx, ty - 9, tx + 5, ty + 6, s.crown);
+  }
+}
+
+/**
+ * Paint the boss: a telegraph wind-up aura, a floor shadow, the shape-specific
+ * body, then a white hurt-flash wash. All colors come from `boss.skin`;
+ * `boss.shape` swaps the whole silhouette.
  */
 export function drawBoss(ctx: CanvasRenderingContext2D, boss: Boss, frame: number): void {
   if (isCuphead()) return drawBossInk(ctx, boss, frame, boilOn());
@@ -249,6 +320,7 @@ export function drawBoss(ctx: CanvasRenderingContext2D, boss: Boss, frame: numbe
 
   if (shape === 'tree') drawTree(ctx, boss, x, y, w, h, frame);
   else if (shape === 'rock') drawRock(ctx, boss, x, y, w, h, frame);
+  else if (shape === 'core') drawCore(ctx, boss, x, y, w, h, frame);
   else drawCrystal(ctx, boss, x, y, w, h, frame);
 
   // Hurt flash: a brief white wash over the body.

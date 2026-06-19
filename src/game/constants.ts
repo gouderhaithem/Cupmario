@@ -255,6 +255,17 @@ export const SHOCK_LIFE = 34;
 export const SHOCK_H = 34;
 /** Arena split into this many segments; alternating ones electrify. */
 export const SHOCK_SEGMENTS = 7;
+// THE OVERCLOCK (aerial 'orbit' boss): weaves a figure-8 through the air.
+/** Orbit angular speed (radians/frame). */
+export const ORBIT_SPEED = 0.02;
+/** Horizontal orbit radius (px) around the arena center. */
+export const ORBIT_RX = 5 * TILE;
+/** Vertical weave amplitude (px) of the figure-8. */
+export const ORBIT_RY = 1.4 * TILE;
+/** Hover height (box-top px) the orbit weaves around — mid-air, well off the floor. */
+export const ORBIT_CY = 2.6 * TILE;
+/** aimedVolley bolt speed (px/frame) — a fast, tight burst that locks onto Pip. */
+export const VOLLEY_SPEED = 6.2;
 // spiralShot: a rotating arm of bolts (THE OVERCLOCK).
 export const SPIRAL_ARMS = 3;
 /** Bolts fired along each arm per cast. */
@@ -479,8 +490,11 @@ export const BOSS_SKINS: BossSkin[] = [
   { body: '#8a8b92', bodyDk: '#5c5d66', bodyLo: '#36373e', accent: '#ff7a2f', eye: '#ffb24a', crown: '#c8d2dc' },
   // RIME, the Frost Spire: icy cyans + frosty white highlights.
   { body: '#7fceff', bodyDk: '#3f8fb8', bodyLo: '#1d4a66', accent: '#eafcff', eye: '#bfefff', crown: '#ffffff' },
+  // THE OVERCLOCK, Rogue Core: a glitch-machine — violet-black shell, hot magenta
+  // arcs, an electric-cyan eye, and a charged-yellow crown ring.
+  { body: '#3a2d6e', bodyDk: '#241a47', bodyLo: '#120c28', accent: '#ff3df0', eye: '#7ef0ff', crown: '#ffe23c' },
 ];
-export const BOSS_SHAPES: BossShape[] = ['tree', 'rock', 'crystal'];
+export const BOSS_SHAPES: BossShape[] = ['tree', 'rock', 'crystal', 'core'];
 
 // ---- Per-level player outfits (index = level index) ----
 // Level 1 = blue explorer; Level 2 = red hair / green shirt / purple pants.
