@@ -114,7 +114,11 @@ function createSession(role: Role, code: string, handlers: NetHandlers): NetSess
   } else {
     peer.on('open', () => {
       status('Connecting…');
-      bind(peer.connect(peerId(code), { reliable: true }));
+      // JSON serialization: robust for our structured world snapshots. PeerJS's
+      // default BinaryPack can silently mishandle large/nested objects, which
+      // stalls the guest (it renders host snapshots and can't recover). The host
+      // side adopts the dialer's serialization automatically.
+      bind(peer.connect(peerId(code), { reliable: true, serialization: 'json' }));
     });
   }
 

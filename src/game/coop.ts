@@ -21,6 +21,15 @@ let role: Role | null = null;
 let beginStage: ((stage: number) => void) | null = null;
 let tick = 0;
 
+// Opt-in net diagnostics: open the page with ?netlog=1 to trace the handshake,
+// the first snapshot/input, and any apply error in the browser console.
+const NETLOG = typeof location !== 'undefined' && location.search.includes('netlog');
+let loggedSnap = false;
+let loggedInput = false;
+function dlog(...args: unknown[]): void {
+  if (NETLOG) console.info('[coop]', ...args);
+}
+
 /** True while an online co-op session is connected. */
 export function coopActive(): boolean {
   return session !== null;
@@ -114,22 +123,36 @@ export function applySnapshot(state: GameState, s: Snapshot): void {
 // ---- Message handling ----
 
 function handleMessage(state: GameState, msg: NetMessage): void {
-  if (msg.t === 'begin') {
-    if (role === 'guest') beginStage?.(msg.stage); // host drove the start
-    return;
-  }
-  if (msg.t === 'input') {
-    // Host: apply the guest's relayed input to players[1].
-    const guest = state.players[1];
-    if (guest) {
-      guest.keys = msg.keys;
-      guest.aimX = msg.aimX;
-      guest.aimY = msg.aimY;
+  try {
+    if (msg.t === 'begin') {
+      dlog('begin received, stage', msg.stage);
+      if (role === 'guest') beginStage?.(msg.stage); // host drove the start
+      return;
     }
-    return;
-  }
-  if (msg.t === 'snapshot') {
-    applySnapshot(state, msg.s);
+    if (msg.t === 'input') {
+      if (!loggedInput) {
+        dlog('first guest input received');
+        loggedInput = true;
+      }
+      // Host: apply the guest's relayed input to players[1].
+      const guest = state.players[1];
+      if (guest) {
+        guest.keys = msg.keys;
+        guest.aimX = msg.aimX;
+        guest.aimY = msg.aimY;
+      }
+      return;
+    }
+    if (msg.t === 'snapshot') {
+      if (!loggedSnap) {
+        dlog('first snapshot received', { players: msg.s.players?.length, screen: msg.s.screen });
+        loggedSnap = true;
+      }
+      applySnapshot(state, msg.s);
+    }
+  } catch (err) {
+    // A single malformed packet must never permanently freeze the guest.
+    console.error('[coop] failed to handle message', msg.t, err);
   }
 }
 
@@ -141,9 +164,12 @@ export function installCoop(state: GameState, begin: (stage: number) => void): v
       session = s;
       role = r;
       tick = 0;
+      loggedSnap = false;
+      loggedInput = false;
       state.coop.active = true;
       state.coop.role = r;
       addPawn(state); // both clients hold two pawns; [0] host, [1] guest
+      dlog('connected as', r);
       if (r === 'host') {
         begin(0);
         s.send({ t: 'begin', stage: 0 });
@@ -170,6 +196,7 @@ export function coopTick(state: GameState): void {
     const local = state.players[0];
     session.send({ t: 'input', keys: { ...local.keys }, aimX: local.aimX, aimY: local.aimY });
   } else {
+    if (tick === SEND_EVERY) dlog('host sending snapshots');
     session.send({ t: 'snapshot', s: buildSnapshot(state) });
   }
 }
