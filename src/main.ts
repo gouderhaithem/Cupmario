@@ -28,6 +28,7 @@ import { updateSparkles } from './game/sparkle';
 import { updateProjectiles } from './game/projectile';
 import { updateSuper } from './game/super';
 import { createState } from './game/state';
+import { isTouchDevice } from './game/settings';
 import { draw } from './render/render';
 import { updateHud } from './render/hud';
 
@@ -43,9 +44,12 @@ function getContext(): CanvasRenderingContext2D {
 function setupScale(): void {
   const scaler = document.getElementById('scaler');
   if (!scaler) return;
-  // Frame is 960x592 plus ~32px of border/box-shadow chrome on each axis.
-  const FRAME_W = VIEW_W + 32;
-  const FRAME_H = VIEW_H + 52 + 32;
+  // Touch devices drop the decorative frame (see CSS @media pointer:coarse), so
+  // no chrome is reserved there and the playfield fills the screen edge-to-edge.
+  // Desktop keeps ~32px of border/box-shadow chrome on each axis.
+  const chrome = isTouchDevice() ? 0 : 32;
+  const FRAME_W = VIEW_W + chrome;
+  const FRAME_H = VIEW_H + 52 + chrome;
 
   const apply = (): void => {
     const w = window.innerWidth || document.documentElement.clientWidth || 0;

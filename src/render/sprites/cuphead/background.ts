@@ -10,10 +10,15 @@
 
 import { VIEW_H, VIEW_W } from '../../../game/constants';
 import type { Theme } from '../../../types';
+import { glowSprite } from '../../glow';
 import { boilOffset, INK, PAPER, sway } from '../../ink';
 import { boilOn } from '../../style-ctx';
 import { inkTheme } from './theme';
 import type { InkTheme } from './theme';
+
+// Per-theme sky gradient cache: the three sky colours are static for a biome, so
+// the linear gradient is built once per theme instead of every frame.
+const skyCache = new Map<InkTheme, CanvasGradient>();
 
 // Idle-animation periods (frames) and amplitudes (px) — kept named so the breeze
 // timing lives in one place rather than as magic numbers down in the draws.
@@ -192,10 +197,14 @@ function godRays(ctx: CanvasRenderingContext2D, sunX: number, sunY: number, fram
 
 /** Paint the sky gradient + a living celestial body shared by every biome. */
 function drawSky(ctx: CanvasRenderingContext2D, t: InkTheme, camX: number, frame: number, react: BgReact): void {
-  const grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  grd.addColorStop(0, t.sky[0]);
-  grd.addColorStop(0.55, t.sky[1]);
-  grd.addColorStop(1, t.sky[2]);
+  let grd = skyCache.get(t);
+  if (!grd) {
+    grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+    grd.addColorStop(0, t.sky[0]);
+    grd.addColorStop(0.55, t.sky[1]);
+    grd.addColorStop(1, t.sky[2]);
+    skyCache.set(t, grd);
+  }
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
@@ -231,11 +240,12 @@ function drawSky(ctx: CanvasRenderingContext2D, t: InkTheme, camX: number, frame
     const sunY = 110;
     if (t.godRays) godRays(ctx, sunX, sunY, frame, react.flash);
     ctx.save();
-    const halo = ctx.createRadialGradient(sunX, sunY, 30, sunX, sunY, 200);
-    halo.addColorStop(0, 'rgba(255,240,176,0.85)');
-    halo.addColorStop(1, 'rgba(255,240,176,0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(sunX - 200, sunY - 200, 400, 400);
+    const halo = glowSprite(200, [
+      [0, 'rgba(255,240,176,0.85)'],
+      [0.15, 'rgba(255,240,176,0.85)'], // matches the old inner radius (30/200)
+      [1, 'rgba(255,240,176,0)'],
+    ]);
+    ctx.drawImage(halo, sunX - 200, sunY - 200);
     ctx.translate(sunX, sunY);
     ctx.rotate((camX * 0.0006) % (Math.PI * 2));
     ctx.fillStyle = 'rgba(255,224,135,0.5)';
@@ -268,11 +278,12 @@ function drawSky(ctx: CanvasRenderingContext2D, t: InkTheme, camX: number, frame
     const mx = 800 - ((camX * 0.05) % 60);
     const my = 104 + sway(frame, 200, 4); // gentle bob
     ctx.save();
-    const halo = ctx.createRadialGradient(mx, my, 24, mx, my, 150);
-    halo.addColorStop(0, 'rgba(231,222,250,0.55)');
-    halo.addColorStop(1, 'rgba(231,222,250,0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(mx - 150, my - 150, 300, 300);
+    const halo = glowSprite(150, [
+      [0, 'rgba(231,222,250,0.55)'],
+      [0.16, 'rgba(231,222,250,0.55)'],
+      [1, 'rgba(231,222,250,0)'],
+    ]);
+    ctx.drawImage(halo, mx - 150, my - 150);
     ctx.beginPath();
     ctx.arc(mx, my, 46, 0, Math.PI * 2);
     ctx.fillStyle = '#eef1ff';
@@ -374,11 +385,13 @@ function crystalCluster(ctx: CanvasRenderingContext2D, x: number, baseY: number,
   const glow = 0.55 + Math.sin((frame + x) * 0.06) * 0.35;
   ctx.save();
   ctx.globalAlpha = glow * 0.5;
-  const halo = ctx.createRadialGradient(x, baseY - s, s * 0.3, x, baseY - s, s * 2.2);
-  halo.addColorStop(0, t.accent);
-  halo.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = halo;
-  ctx.fillRect(x - s * 2.2, baseY - s * 2.6, s * 4.4, s * 3.2);
+  const R = s * 2.2;
+  const halo = glowSprite(R, [
+    [0, t.accent],
+    [0.136, t.accent], // matches the old inner radius (s*0.3 / s*2.2)
+    [1, 'rgba(0,0,0,0)'],
+  ]);
+  ctx.drawImage(halo, x - R, baseY - s - R);
   ctx.restore();
   const b = boil(frame, x * 0.07);
   ctx.save();
@@ -546,13 +559,12 @@ function drawAmbient(ctx: CanvasRenderingContext2D, t: InkTheme, camX: number, f
       const fy = 150 + (i * 47) % 320 + sway(frame, (70 + (i % 4) * 19) / energy, 16, i * 0.31);
       const pulse = (Math.sin((frame + i * 30) * 0.08) + 1) * 0.5;
       ctx.globalAlpha = Math.min(1, 0.18 + pulse * 0.45 + react.flash * 0.4);
-      const halo = ctx.createRadialGradient(fx, fy, 0, fx, fy, 9);
-      halo.addColorStop(0, t.accent);
-      halo.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = halo;
-      ctx.beginPath();
-      ctx.arc(fx, fy, 9, 0, Math.PI * 2);
-      ctx.fill();
+      // Pre-rendered glow (cached by accent colour) — no per-firefly gradient.
+      const halo = glowSprite(9, [
+        [0, t.accent],
+        [1, 'rgba(0,0,0,0)'],
+      ]);
+      ctx.drawImage(halo, fx - 9, fy - 9);
     }
   } else {
     // Petals: soft cream/pink dabs tumbling down on a diagonal drift.

@@ -7,6 +7,7 @@
 
 import { VIEW_H, VIEW_W } from '../../../game/constants';
 import type { Theme } from '../../../types';
+import { glowSprite } from '../../glow';
 import { sway } from '../../ink';
 import { inkTheme } from './theme';
 import type { InkTheme } from './theme';
@@ -58,13 +59,12 @@ function frontMotes(ctx: CanvasRenderingContext2D, t: InkTheme, camX: number, fr
       : 60 + (i * 71) % (VIEW_H - 80) + sway(frame, 60 + i * 9, 30, i);
     const r = 7 + (i % 3) * 5;
     ctx.globalAlpha = 0.16;
-    const g = ctx.createRadialGradient(mx, my, 0, mx, my, r);
-    g.addColorStop(0, `rgba(${tint},0.9)`);
-    g.addColorStop(1, `rgba(${tint},0)`);
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(mx, my, r, 0, Math.PI * 2);
-    ctx.fill();
+    // Pre-rendered bokeh disc (cached by tint+radius) — no per-mote gradient.
+    const mote = glowSprite(r, [
+      [0, `rgba(${tint},0.9)`],
+      [1, `rgba(${tint},0)`],
+    ]);
+    ctx.drawImage(mote, mx - r, my - r);
   }
 }
 

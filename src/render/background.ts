@@ -11,6 +11,9 @@ import { themeVisual } from './themes';
 import type { ThemeVisual } from './themes';
 import type { Theme } from '../types';
 
+// Per-theme sky gradient cache (static colours per biome → build once).
+const skyCache = new Map<ThemeVisual, CanvasGradient>();
+
 function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, color: string): void {
   rect(ctx, x, y + 14, 86, 20, color);
   rect(ctx, x + 14, y, 56, 26, color);
@@ -125,10 +128,14 @@ export function drawBackground(ctx: CanvasRenderingContext2D, theme: Theme, camX
   if (isCuphead()) return drawBackgroundInk(ctx, theme, camX, frame, react);
   const t = themeVisual(theme);
 
-  // Sky gradient.
-  const grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  grd.addColorStop(0, t.sky[0]);
-  grd.addColorStop(1, t.sky[1]);
+  // Sky gradient (cached per theme).
+  let grd = skyCache.get(t);
+  if (!grd) {
+    grd = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+    grd.addColorStop(0, t.sky[0]);
+    grd.addColorStop(1, t.sky[1]);
+    skyCache.set(t, grd);
+  }
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 

@@ -53,6 +53,13 @@ html, body {
   overflow: hidden;
 }
 
+/* On touch devices, drop the decorative cabinet frame so the playfield runs
+   edge-to-edge (true fullscreen). setupScale() matches this by not reserving
+   chrome when sizing the scaler. */
+@media (pointer: coarse) {
+  #cabinet { border: 0; box-shadow: none; }
+}
+
 /* ---- HUD bar ---- */
 #hud {
   height: 52px;
