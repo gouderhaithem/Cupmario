@@ -1,9 +1,9 @@
 // Top-level draw(): background -> tiles -> coins -> mushrooms -> enemies ->
 // bolts -> flag -> player -> score pops. Reads state only (golden rule #4).
 
-import { BOSS_HURT_FLASH, COLS, COMBO_FLASH_FRAMES, COOP_PARTNER_SKIN, FLASH_FRAMES, PALETTE, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
+import { BOSS_HURT_FLASH, COLS, COMBO_FLASH_FRAMES, COOP_PARTNER_SKIN, ENEMY_FILTERS, FLASH_FRAMES, PALETTE, ROWS, SKINS, TILE, VIEW_H, VIEW_W } from '../game/constants';
 import type { GameState } from '../game/state';
-import { isCuphead, setRenderStyle } from './style-ctx';
+import { isCuphead, setEnemyVariant, setRenderStyle } from './style-ctx';
 import { INK } from './ink';
 import { drawBackground } from './background';
 import {
@@ -11,6 +11,7 @@ import {
   drawBossIntro,
   drawCleanGrade,
   drawFilmBurn,
+  drawHint,
   drawIris,
   drawKoCard,
   drawPauseMenu,
@@ -135,7 +136,12 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     drawMushroom(ctx, m);
   }
 
-  // Enemies (each kind gets its own sprite).
+  // Enemies (each kind gets its own sprite), recolored per level so each stage's
+  // roster reads as a distinct palette. Boss-arena foes keep the base palette.
+  const enemyFilter = state.screen === 'boss' ? 'none' : ENEMY_FILTERS[state.levelIndex] ?? 'none';
+  setEnemyVariant(state.screen === 'boss' ? 0 : state.levelIndex);
+  ctx.save();
+  if (enemyFilter !== 'none') ctx.filter = enemyFilter;
   for (const e of state.enemies) {
     if (!e.alive) continue;
     if (e.kind === 'shooter') drawSpitter(ctx, e, frame);
@@ -146,6 +152,7 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     else if (e.kind === 'charger') drawCharger(ctx, e, frame);
     else drawFoe(ctx, e, frame);
   }
+  ctx.restore();
 
   // Arena hazards (root pillars / electrified floor) sit on the world layer.
   for (const hz of state.hazards) drawHazard(ctx, hz, frame);
@@ -294,6 +301,9 @@ export function draw(ctx: CanvasRenderingContext2D, state: GameState): void {
     if (state.bossIntro > 0) drawBossIntro(ctx, state.bossIntro);
     if (state.boss?.dead && state.bossKo > 0) drawKoCard(ctx, state.bossKo);
   }
+
+  // First-run onboarding hint (play screen only, never over the pause menu).
+  if (state.screen === 'play' && !state.paused) drawHint(ctx, state);
 
   // Pause menu, drawn over the frozen world.
   if (state.paused) drawPauseMenu(ctx, state);

@@ -9,11 +9,22 @@ import type { Style } from '../types';
 
 let currentStyle: Style = 'cuphead';
 let boilEnabled = true;
+let enemyVariantIdx = 0;
 
 /** Set the active style for this frame. Boil (line wobble) is off under reduced motion. */
 export function setRenderStyle(style: Style, reducedMotion: boolean): void {
   currentStyle = style;
   boilEnabled = !reducedMotion;
+}
+
+/** Set the per-level enemy variant (0 = base) used to vary foe headgear by stage. */
+export function setEnemyVariant(variant: number): void {
+  enemyVariantIdx = variant;
+}
+
+/** The current enemy variant index (drives per-level foe toppers). */
+export function enemyVariant(): number {
+  return enemyVariantIdx;
 }
 
 /** True when the rubber-hose (cuphead) sprite path should be used. */

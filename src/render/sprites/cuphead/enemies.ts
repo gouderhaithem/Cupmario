@@ -6,6 +6,45 @@
 import { PALETTE } from '../../../game/constants';
 import type { Enemy } from '../../../types';
 import { INK, PAPER, inkEllipse, inkHose, inkRoundRect, inkShadow, inkTri, pieEye, softHi } from '../../ink';
+import { enemyVariant } from '../../style-ctx';
+
+/**
+ * Per-level headgear stamped on the round ground foes so each stage's critters
+ * read as distinct: horns, antennae, a spike mohawk, a unicorn horn, or glitch
+ * bits. Variant 0 (level 1) is bare. Drawn last so it sits above the head; the
+ * per-level recolor filter tints it along with the body.
+ */
+function drawTopper(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  topY: number,
+  base: string,
+  o: { frame: number; boil: boolean },
+): void {
+  const v = enemyVariant();
+  if (v <= 0) return;
+  if (v === 1) {
+    inkTri(ctx, cx - 9, topY + 3, cx - 6, topY - 8, cx - 3, topY + 2, base, { ...o, seed: 11 });
+    inkTri(ctx, cx + 3, topY + 2, cx + 6, topY - 8, cx + 9, topY + 3, base, { ...o, seed: 12 });
+  } else if (v === 2) {
+    inkHose(ctx, cx - 5, topY + 2, cx - 8, topY - 10, 2.5, base, { ...o, seed: 11 });
+    inkHose(ctx, cx + 5, topY + 2, cx + 8, topY - 10, 2.5, base, { ...o, seed: 12 });
+    inkEllipse(ctx, cx - 8, topY - 11, 2.6, 2.6, PALETTE.eye, { ...o, seed: 13 });
+    inkEllipse(ctx, cx + 8, topY - 11, 2.6, 2.6, PALETTE.eye, { ...o, seed: 14 });
+  } else if (v === 3) {
+    for (let i = -1; i <= 1; i++) {
+      inkTri(ctx, cx + i * 7 - 3, topY + 2, cx + i * 7, topY - 9, cx + i * 7 + 3, topY + 2, base, { ...o, seed: 11 + i });
+    }
+  } else if (v === 4) {
+    inkTri(ctx, cx - 4, topY + 2, cx, topY - 14, cx + 4, topY + 2, base, { ...o, seed: 11 });
+  } else {
+    const j = (o.frame % 4) - 1.5;
+    for (let i = 0; i < 3; i++) {
+      const bx = cx + (i - 1) * 7 + j;
+      inkRoundRect(ctx, bx - 3, topY - 8 - i, 6, 6, 1.5, i === 1 ? PALETTE.eye : base, { ...o, seed: 11 + i, lw: 1.5 });
+    }
+  }
+}
 
 /** A flying "Drone": round teal pod with a blurred rotor and one big eye. */
 export function drawFlyerInk(ctx: CanvasRenderingContext2D, e: Enemy, frame: number, boil: boolean): void {
@@ -66,6 +105,7 @@ export function drawFoeInk(ctx: CanvasRenderingContext2D, e: Enemy, frame: numbe
   ctx.arc(cx, y + h * 0.74, 5, 1.15 * Math.PI, 1.85 * Math.PI);
   ctx.stroke();
   ctx.restore();
+  drawTopper(ctx, cx, y + h * 0.1, PALETTE.foe, o);
 }
 
 /** A stationary "Mortar": a squat iron tub with a wide upward barrel. */
@@ -158,4 +198,5 @@ export function drawSpitterInk(ctx: CanvasRenderingContext2D, e: Enemy, frame: n
   // Barrel snout on the facing side.
   const sx = facing > 0 ? x + w - 2 : x + 2;
   inkRoundRect(ctx, facing > 0 ? sx : sx - 8, y + h / 2 - 4, 8, 9, 3, PALETTE.spitDk, { ...o, seed: 6 });
+  drawTopper(ctx, cx, y + h * 0.12, PALETTE.spit, o);
 }

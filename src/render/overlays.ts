@@ -254,6 +254,41 @@ export function drawVintage(ctx: CanvasRenderingContext2D, frame: number): void 
   ctx.restore();
 }
 
+/**
+ * A first-run onboarding hint: a small deco pill near the top-center with the
+ * control text, fading in on appear and out as it expires. Screen-space.
+ */
+export function drawHint(ctx: CanvasRenderingContext2D, state: GameState): void {
+  const h = state.hint;
+  if (!h) return;
+  const fadeIn = Math.min(1, (h.max - h.life) / 8);
+  const fadeOut = Math.min(1, h.life / 30);
+  const alpha = Math.min(fadeIn, fadeOut);
+  if (alpha <= 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = "12px 'Press Start 2P', monospace";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(h.text).width;
+  const padX = 18;
+  const bw = tw + padX * 2;
+  const bh = 30;
+  const bx = (VIEW_W - bw) / 2;
+  const by = 70;
+  // Ink panel + gold keyline (matches the deco chrome).
+  ctx.fillStyle = DECO_INK;
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = DECO_GOLD;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bx + 2, by + 2, bw - 4, bh - 4);
+  // Text.
+  ctx.fillStyle = DECO_GOLD;
+  ctx.fillText(h.text, VIEW_W / 2, by + bh / 2 + 1);
+  ctx.restore();
+}
+
 /** Big centered "READY?" → "FIGHT!" card, with a sepia flash as the boss drops in. */
 export function drawBossIntro(ctx: CanvasRenderingContext2D, intro: number): void {
   // Sepia wash that fades over the first ~24 frames of the intro.

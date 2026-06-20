@@ -22,6 +22,7 @@ import { updateMushrooms } from './game/mushroom';
 import { updateOrbs } from './game/orbs';
 import { tryParry } from './game/parry';
 import { updatePlayer } from './game/player';
+import { maybeOnboard, tickHint } from './game/onboarding';
 import { updatePuffs } from './game/puff';
 import { updateSparkles } from './game/sparkle';
 import { updateProjectiles } from './game/projectile';
@@ -172,6 +173,8 @@ function main(): void {
       if (po.life <= 0) state.pops.splice(i, 1);
     }
 
+    maybeOnboard(state); // surface first-run control hints in context
+    tickHint(state); // age the active hint banner
     updatePuffs(state); // advance + fade dust clouds
     updateSparkles(state); // advance + fade coin twinkles
     updateCamera(state);
