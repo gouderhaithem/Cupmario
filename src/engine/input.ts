@@ -4,10 +4,15 @@
 import { initAudio } from './audio';
 import type { GameState } from '../game/state';
 
-/** Show or hide the touch pads by toggling a class on the cabinet. */
+/** Show or hide the touch pads. They live outside the scaled cabinet (fixed to
+ *  the screen so they stay a comfortable tap size), so the toggle is on <body>. */
 export function applyTouchControls(visible: boolean): void {
-  const cabinet = document.getElementById('cabinet');
-  cabinet?.classList.toggle('no-touch-controls', !visible);
+  document.body.classList.toggle('touch-on', visible);
+}
+
+/** Reflect auto-fire to the DOM: when on, the manual FIRE pad is hidden. */
+export function applyAutoFire(on: boolean): void {
+  document.body.classList.toggle('autofire', on);
 }
 
 /** Toggle the colorblind-friendly UI palette on the cabinet (CSS does the rest). */

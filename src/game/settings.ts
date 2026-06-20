@@ -18,6 +18,23 @@ export interface Settings {
   style: Style;
   /** Colorblind-friendly UI palette (red/green-safe hearts, HP, grades, tags). */
   colorblind: boolean;
+  /** Auto-fire the equipped weapon (touch-friendly; charge weapons exempt). */
+  autoFire: boolean;
+}
+
+/**
+ * True on touch-first devices (phones/tablets). Used to pick sensible mobile
+ * defaults — on-screen controls + auto-fire — when the player hasn't chosen yet.
+ * Guarded so it never throws in a non-DOM (test) environment.
+ */
+export function isTouchDevice(): boolean {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) return true;
+    if (typeof matchMedia === 'function') return matchMedia('(pointer: coarse)').matches;
+  } catch {
+    /* ignore — assume non-touch */
+  }
+  return false;
 }
 
 const ASSIST_KEY = `${BEST_KEY}-assist`; // legacy boolean, migrated to difficulty
@@ -27,6 +44,7 @@ const REDUCED_MOTION_KEY = `${BEST_KEY}-reduced-motion`;
 const TOUCH_CONTROLS_KEY = `${BEST_KEY}-touch-controls`;
 const STYLE_KEY = `${BEST_KEY}-style`;
 const COLORBLIND_KEY = `${BEST_KEY}-colorblind`;
+const AUTO_FIRE_KEY = `${BEST_KEY}-auto-fire`;
 
 /** Default look when nothing is stored or in the URL — keeps the vintage grade. */
 const DEFAULT_STYLE: Style = 'cuphead';
@@ -59,12 +77,16 @@ function resolveStyle(): Style {
 }
 
 export function loadSettings(): Settings {
+  // Touch devices default to on-screen controls + auto-fire so the game is
+  // playable with no keyboard; both remain overridable in the pause menu.
+  const touch = isTouchDevice();
   let difficulty: Difficulty = 'normal';
   let volume = 0.5;
   let reducedMotion = false;
-  let showTouchControls = SHOW_TOUCH_CONTROLS;
+  let showTouchControls = SHOW_TOUCH_CONTROLS || touch;
   let style: Style = DEFAULT_STYLE;
   let colorblind = false;
+  let autoFire = touch;
   try {
     const stored = localStorage.getItem(DIFFICULTY_KEY);
     if (isDifficulty(stored)) {
@@ -79,10 +101,12 @@ export function loadSettings(): Settings {
     if (t !== null) showTouchControls = t === '1'; // unset → keep the constant default
     style = resolveStyle();
     colorblind = localStorage.getItem(COLORBLIND_KEY) === '1';
+    const af = localStorage.getItem(AUTO_FIRE_KEY);
+    if (af !== null) autoFire = af === '1'; // unset → keep the touch default
   } catch {
     /* ignore storage errors */
   }
-  return { difficulty, volume, reducedMotion, showTouchControls, style, colorblind };
+  return { difficulty, volume, reducedMotion, showTouchControls, style, colorblind, autoFire };
 }
 
 export function saveSettings(s: Settings): void {
@@ -93,6 +117,7 @@ export function saveSettings(s: Settings): void {
     localStorage.setItem(TOUCH_CONTROLS_KEY, s.showTouchControls ? '1' : '0');
     localStorage.setItem(STYLE_KEY, s.style);
     localStorage.setItem(COLORBLIND_KEY, s.colorblind ? '1' : '0');
+    localStorage.setItem(AUTO_FIRE_KEY, s.autoFire ? '1' : '0');
   } catch {
     /* ignore storage errors */
   }

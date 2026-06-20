@@ -102,11 +102,12 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
     `TOUCH CONTROLS:  ${state.showTouchControls ? 'ON' : 'OFF'}`,
     `STYLE:  ${state.style === 'cuphead' ? 'CUPHEAD' : 'MARIO'}`,
     `COLORBLIND MODE:  ${state.colorblind ? 'ON' : 'OFF'}`,
+    `AUTO-FIRE:  ${state.autoFire ? 'ON' : 'OFF'}`,
     'QUIT TO TITLE',
   ];
   ctx.font = "14px 'Press Start 2P', monospace";
-  const top = 196;
-  const rowH = 42;
+  const top = 188;
+  const rowH = 38;
   rows.forEach((label, i) => {
     const y = top + i * rowH;
     const sel = i === state.pauseIndex;

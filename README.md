@@ -46,9 +46,12 @@ boiling-ink outline on everything that moves.
 - **Real platforming kit** — running, variable jump, duck/fast-fall, dash,
   wall-jump, shooting, a **parry** on pink bolts, moving + crumbling platforms,
   checkpoints.
+- **Plays on phones** — auto-detected touch controls, an **auto-fire** option, a
+  portrait "rotate" nudge, and a layout that fits notches and the mobile address
+  bar. See below.
 - **Accessibility & options** — three difficulty tiers, master volume,
   reduced-motion (freezes the boil/grain/shake), a **colorblind-friendly UI
-  palette**, and on-screen touch controls.
+  palette**, on-screen touch controls, and auto-fire.
 - **Synthesized audio** — every SFX and music track is generated at runtime with
   the Web Audio API; there are no audio files in the repo.
 - **Levels are data** — each level/boss is a JSON file; no code changes to add one.
@@ -83,6 +86,22 @@ Single-player is unchanged and remains the default — co-op is entirely opt-in.
 
 [PeerJS]: https://peerjs.com/
 
+## Play on mobile
+
+The game is a landscape platformer that works on phones and tablets out of the box:
+
+- **Touch controls auto-appear** on touch devices — a left D-pad (move / duck) and
+  a right action cluster (jump, fire, dash, super, switch). They're anchored to the
+  screen (not the scaled play-field), so they stay a comfortable thumb size on any
+  display. You can still force them on/off in the pause menu.
+- **Auto-fire** is on by default on touch so you don't have to tap FIRE — your
+  weapon shoots at its own fire rate while you focus on moving and jumping. Toggle
+  it in the pause menu (charge weapons always need a manual press).
+- **Hold it in landscape.** In portrait you'll get a "rotate your device" prompt;
+  turn sideways and play resumes.
+- The layout respects notches / rounded corners (safe-area insets) and the mobile
+  browser's address bar (dynamic viewport height), so nothing gets clipped.
+
 ## Run it
 
 ```bash
@@ -112,8 +131,9 @@ Open the dev URL and press **Space** to start. Append `?style=cuphead` or
 | **2-player online co-op** | `C` (from the title screen) |
 
 Gamepad is supported (right stick aims). On non-play screens, `Space/Enter`
-advances; `↓`/`S` opens **Stage Select**; `C` opens **co-op**. Touch
-buttons appear on mobile.
+advances; `↓`/`S` opens **Stage Select**; `C` opens **co-op**. On touch devices,
+on-screen controls and **auto-fire** turn on automatically (see [Play on
+mobile](#play-on-mobile)).
 
 ## Project structure
 

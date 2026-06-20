@@ -2,7 +2,7 @@
 
 import { setMasterVolume, sfx, startBossMusic, startMusic, stopMusic } from '../engine/audio';
 import { shakeScreen } from '../engine/effects';
-import { applyColorblind, applyTouchControls } from '../engine/input';
+import { applyAutoFire, applyColorblind, applyTouchControls } from '../engine/input';
 import { openLobby } from '../engine/lobby';
 import { endCoop } from './coop';
 import {
@@ -384,7 +384,7 @@ const ADVANCE_KEYS = new Set([' ', 'Enter', 'ArrowRight', 'ArrowUp', 'w', 'W']);
 const PAUSE_KEYS = new Set(['Escape', 'p', 'P']);
 
 /** Pause-menu rows: Resume / Difficulty / Volume / Reduced Motion / Touch Controls / Style / Quit. */
-export const PAUSE_ITEMS = 8;
+export const PAUSE_ITEMS = 9;
 
 /** Open the stage-select screen (from title / gameover / win). */
 export function openSelect(state: GameState): void {
@@ -444,6 +444,7 @@ function persist(state: GameState): void {
     showTouchControls: state.showTouchControls,
     style: state.style,
     colorblind: state.colorblind,
+    autoFire: state.autoFire,
   });
 }
 
@@ -493,6 +494,13 @@ function toggleColorblind(state: GameState): void {
   persist(state);
 }
 
+/** Flip auto-fire, reflect it to the DOM (hides the FIRE pad), and persist. */
+function toggleAutoFire(state: GameState): void {
+  state.autoFire = !state.autoFire;
+  applyAutoFire(state.autoFire);
+  persist(state);
+}
+
 /** Navigate + act within the pause menu. */
 function pauseKey(state: GameState, key: string): void {
   if (UP_KEYS.has(key)) {
@@ -507,6 +515,7 @@ function pauseKey(state: GameState, key: string): void {
     else if (state.pauseIndex === 4) toggleTouchControls(state);
     else if (state.pauseIndex === 5) toggleStyle(state);
     else if (state.pauseIndex === 6) toggleColorblind(state);
+    else if (state.pauseIndex === 7) toggleAutoFire(state);
   } else if (CONFIRM_KEYS.has(key)) {
     if (state.pauseIndex === 0) {
       state.paused = false; // Resume
@@ -521,6 +530,8 @@ function pauseKey(state: GameState, key: string): void {
     } else if (state.pauseIndex === 6) {
       toggleColorblind(state);
     } else if (state.pauseIndex === 7) {
+      toggleAutoFire(state);
+    } else if (state.pauseIndex === 8) {
       state.paused = false; // Quit to title
       stopMusic();
       endCoop(state); // drop any online co-op link

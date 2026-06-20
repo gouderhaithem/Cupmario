@@ -25,6 +25,7 @@ html, body {
 #stage {
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* dynamic vh: excludes mobile browser chrome (address bar) */
   background: var(--bg);
   display: flex;
   align-items: center;
@@ -162,31 +163,55 @@ html, body {
   image-rendering: crisp-edges;
 }
 
-/* ---- Touch controls ---- */
-/* Hidden when the cabinet carries .no-touch-controls (see resolveTouchControls). */
-#cabinet.no-touch-controls #pad-left,
-#cabinet.no-touch-controls #pad-right {
+/* ---- Touch controls ----
+   Anchored to the screen (not the scaled cabinet) so they keep a comfortable
+   tap size on any phone. Hidden by default; shown when <body> has .touch-on
+   (auto on touch devices; toggled in the pause menu). Safe-area insets keep
+   them clear of notches / rounded corners / home indicators. */
+#pad-left,
+#pad-right {
   display: none;
+  position: fixed;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 30;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.touch-on #pad-left,
+body.touch-on #pad-right {
+  display: flex;
 }
 
 #pad-left {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  display: flex;
+  left: calc(14px + env(safe-area-inset-left));
   gap: 10px;
-  z-index: 6;
+  align-items: flex-end;
 }
 
 #pad-right {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 6;
-  display: flex;
+  right: calc(14px + env(safe-area-inset-right));
+  flex-direction: column;
   align-items: flex-end;
   gap: 10px;
 }
+
+/* Secondary actions (swap / super / dash) — a compact row above the primaries. */
+.pad-aux {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Primary actions (fire + jump) — large, in the thumb's resting corner. */
+.pad-main {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Auto-fire on → the manual FIRE pad is redundant, so hide it. */
+body.autofire #btn-fire { display: none; }
 
 .touch-btn {
   width: 66px;
@@ -506,3 +531,59 @@ html, body {
 #cabinet.cb .grade-badge[data-grade="C"] { background: #e69f00; color: #3a2600; }
 #cabinet.cb .ov-big-green,
 #cabinet.cb .ov-big-gold { color: #56b4e9; text-shadow: 5px 5px 0 #04243a; }
+
+/* ---- Portrait rotate hint ----
+   This is a landscape game. On a portrait touch screen the cabinet would shrink
+   to a useless strip, so we cover it with a "rotate" nudge instead. Pure CSS:
+   shown only on a coarse-pointer device held in portrait. */
+#rotate-hint { display: none; }
+
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate-hint {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    background: var(--bg);
+    color: var(--gold);
+    text-align: center;
+    padding: 24px;
+  }
+  /* The pads make no sense in portrait — the rotate hint owns the screen. */
+  body.touch-on #pad-left,
+  body.touch-on #pad-right { display: none; }
+}
+
+.rotate-icon {
+  font-size: 64px;
+  line-height: 1;
+  animation: rotateNudge 1.6s ease-in-out infinite;
+}
+.rotate-text {
+  font-size: 11px;
+  line-height: 20px;
+  letter-spacing: 1px;
+  color: var(--paper);
+}
+@keyframes rotateNudge {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rotate-icon { animation: none; }
+}
+
+/* Shrink the touch pads a touch on very short (landscape phone) viewports so
+   they don't crowd the play area. */
+@media (max-height: 400px) {
+  .touch-btn { width: 54px; height: 54px; font-size: 16px; }
+  .touch-jump { width: 64px; height: 64px; }
+  .touch-fire { width: 58px; height: 58px; }
+  .touch-dash,
+  .touch-super,
+  .touch-swap { width: 50px; height: 50px; }
+}

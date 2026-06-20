@@ -245,9 +245,13 @@ export function updatePlayer(state: GameState, pawn: Pawn): void {
   if (predicting) return;
   if (pawn.shootCd > 0) pawn.shootCd -= 1;
   const weapon = currentWeapon(pawn);
+  // Auto-fire treats the trigger as held but, unlike a manual hold, re-arms each
+  // time the weapon comes off cooldown (below) so it repeats at the fire rate.
+  // Charge weapons are exempt — they need a real press-and-release to charge.
+  const autoFire = state.autoFire && !weapon.charge;
   if (weapon.charge) {
     updateCharge(state, pawn, weapon);
-  } else if (keys.shoot && !pawn.shootLatch) {
+  } else if ((keys.shoot || autoFire) && !pawn.shootLatch) {
     pawn.shootLatch = true;
     if (p.armed && pawn.shootCd <= 0) {
       fireWeapon(state, pawn, weapon, weapon.damage, weapon.sizeMult, weapon.pierce ?? false);
@@ -257,6 +261,9 @@ export function updatePlayer(state: GameState, pawn: Pawn): void {
   } else if (!keys.shoot) {
     pawn.shootLatch = false;
   }
+  // Auto-fire: clear the latch once the cooldown is ready so the held trigger
+  // re-triggers next frame (manual fire stays semi-auto — one shot per press).
+  if (autoFire && pawn.shootCd <= 0) pawn.shootLatch = false;
 }
 
 /**

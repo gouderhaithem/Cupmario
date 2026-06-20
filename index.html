@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <title>Life Quest — Pip's Run</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -62,20 +62,6 @@
         <!-- Game viewport -->
         <div id="viewport">
           <canvas id="game" width="960" height="540"></canvas>
-
-          <!-- Touch controls -->
-          <div id="pad-left">
-            <button id="btn-left" class="touch-btn" type="button" aria-label="Move left">&#9664;</button>
-            <button id="btn-right" class="touch-btn" type="button" aria-label="Move right">&#9654;</button>
-            <button id="btn-down" class="touch-btn" type="button" aria-label="Duck / fast-fall">&#9660;</button>
-          </div>
-          <div id="pad-right">
-            <button id="btn-swap" class="touch-btn touch-swap" type="button" aria-label="Switch weapon">GUN</button>
-            <button id="btn-super" class="touch-btn touch-super" type="button" aria-label="Super / EX">SUPER</button>
-            <button id="btn-dash" class="touch-btn touch-dash" type="button" aria-label="Dash">DASH</button>
-            <button id="btn-fire" class="touch-btn touch-fire" type="button" aria-label="Fire bolt">FIRE</button>
-            <button id="btn-jump" class="touch-btn touch-jump" type="button" aria-label="Jump">JUMP</button>
-          </div>
 
           <!-- Overlays (toggled by render/hud.ts) -->
           <div id="ov-title" class="overlay">
@@ -157,6 +143,35 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Touch controls: fixed to the screen (not the scaled cabinet) so they
+         stay a comfortable, thumb-reachable size on any phone. Shown only when
+         <body> carries .touch-on (auto on touch devices; toggle in pause). -->
+    <div id="pad-left">
+      <button id="btn-left" class="touch-btn" type="button" aria-label="Move left">&#9664;</button>
+      <button id="btn-right" class="touch-btn" type="button" aria-label="Move right">&#9654;</button>
+      <button id="btn-down" class="touch-btn" type="button" aria-label="Duck / fast-fall">&#9660;</button>
+    </div>
+    <div id="pad-right">
+      <!-- Secondary actions sit in a smaller row above the thumb's resting arc. -->
+      <div class="pad-aux">
+        <button id="btn-swap" class="touch-btn touch-swap" type="button" aria-label="Switch weapon">GUN</button>
+        <button id="btn-super" class="touch-btn touch-super" type="button" aria-label="Super / EX">SUPER</button>
+        <button id="btn-dash" class="touch-btn touch-dash" type="button" aria-label="Dash">DASH</button>
+      </div>
+      <!-- Primary actions: large, in the corner the thumb rests on. -->
+      <div class="pad-main">
+        <button id="btn-fire" class="touch-btn touch-fire" type="button" aria-label="Fire bolt">FIRE</button>
+        <button id="btn-jump" class="touch-btn touch-jump" type="button" aria-label="Jump">JUMP</button>
+      </div>
+    </div>
+
+    <!-- Portrait nudge: this is a landscape game; CSS shows this only on a
+         portrait touch screen (see style.css). -->
+    <div id="rotate-hint">
+      <div class="rotate-icon">&#8635;</div>
+      <div class="rotate-text">ROTATE YOUR DEVICE<br />TO PLAY IN LANDSCAPE</div>
     </div>
   </div>
 

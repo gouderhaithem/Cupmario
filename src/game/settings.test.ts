@@ -31,6 +31,7 @@ const base: Settings = {
   showTouchControls: false,
   style: 'cuphead',
   colorblind: false,
+  autoFire: false,
 };
 
 describe('settings persistence', () => {
@@ -46,5 +47,21 @@ describe('settings persistence', () => {
   it('round-trips colorblind = off explicitly', () => {
     saveSettings({ ...base, colorblind: false });
     expect(loadSettings().colorblind).toBe(false);
+  });
+
+  it('defaults auto-fire off on a non-touch (test) environment', () => {
+    // isTouchDevice() returns false here (no navigator.maxTouchPoints / matchMedia).
+    expect(loadSettings().autoFire).toBe(false);
+    expect(loadSettings().showTouchControls).toBe(false);
+  });
+
+  it('round-trips auto-fire = on', () => {
+    saveSettings({ ...base, autoFire: true });
+    expect(loadSettings().autoFire).toBe(true);
+  });
+
+  it('round-trips auto-fire = off explicitly', () => {
+    saveSettings({ ...base, autoFire: false });
+    expect(loadSettings().autoFire).toBe(false);
   });
 });

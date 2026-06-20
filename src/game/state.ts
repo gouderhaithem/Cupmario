@@ -200,6 +200,8 @@ export interface GameState {
   showTouchControls: boolean;
   /** Colorblind-friendly UI palette (red/green-safe HUD chrome). Persisted. */
   colorblind: boolean;
+  /** Auto-fire the equipped weapon (touch-friendly; charge weapons exempt). Persisted. */
+  autoFire: boolean;
   /** Gameplay is frozen behind the pause menu. */
   paused: boolean;
   /** Highlighted entry in the pause menu. */
@@ -490,6 +492,7 @@ export function createState(): GameState {
     style: settings.style,
     showTouchControls: settings.showTouchControls,
     colorblind: settings.colorblind,
+    autoFire: settings.autoFire,
     paused: false,
     pauseIndex: 0,
     coop: {
