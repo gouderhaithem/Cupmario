@@ -12,13 +12,16 @@
   --green: #58d68a;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background: var(--bg);
-  font-family: 'Press Start 2P', monospace;
+  font-family: "Press Start 2P", monospace;
   overflow: hidden;
 }
 
@@ -44,7 +47,9 @@ html, body {
   height: 592px;
   background: #181833;
   border: 4px solid var(--paper);
-  box-shadow: 0 0 0 4px var(--bg), 0 0 0 8px #3a3a6a;
+  box-shadow:
+    0 0 0 4px var(--bg),
+    0 0 0 8px #3a3a6a;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -57,7 +62,10 @@ html, body {
    edge-to-edge (true fullscreen). setupScale() matches this by not reserving
    chrome when sizing the scaler. */
 @media (pointer: coarse) {
-  #cabinet { border: 0; box-shadow: none; }
+  #cabinet {
+    border: 0;
+    box-shadow: none;
+  }
 }
 
 /* ---- HUD bar ---- */
@@ -103,44 +111,115 @@ html, body {
   border: 2px solid #b3842a;
 }
 
-.hud-coins { font-size: 9px; color: var(--gold); }
-.hud-label { font-size: 8px; }
-.hud-label-score { color: var(--cyan); }
-.hud-label-lv { color: var(--purple); }
-.hud-label-time { color: #ff8a7a; }
-.hud-label-gun { color: #7ef0ff; }
-.hud-val { font-size: 9px; color: var(--paper); }
-#hud-weapon { color: #7ef0ff; }
+.hud-coins {
+  font-size: 9px;
+  color: var(--gold);
+}
+.hud-label {
+  font-size: 8px;
+}
+.hud-label-score {
+  color: var(--cyan);
+}
+.hud-label-lv {
+  color: var(--purple);
+}
+.hud-label-time {
+  color: #ff8a7a;
+}
+.hud-label-gun {
+  color: #7ef0ff;
+}
+.hud-val {
+  font-size: 9px;
+  color: var(--paper);
+}
+#hud-weapon {
+  color: #7ef0ff;
+}
 
-#hud-hearts { display: flex; gap: 5px; }
-.heart { font-size: 15px; }
-.heart-on { color: var(--red); }
-.heart-off { color: #3a3a55; }
+#hud-hearts {
+  display: flex;
+  gap: 5px;
+}
+.heart {
+  font-size: 15px;
+}
+.heart-on {
+  color: var(--red);
+}
+.heart-off {
+  color: #3a3a55;
+}
 
-#hud-hp { display: flex; gap: 3px; align-items: center; }
+#hud-hp {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
 .hp-pip {
   width: 11px;
   height: 11px;
   border-radius: 2px;
   border: 2px solid #11112a;
 }
-.hp-on { background: #58d68a; }
-.hp-off { background: #3a3a55; }
+.hp-on {
+  background: #58d68a;
+}
+.hp-off {
+  background: #3a3a55;
+}
 
 /* ---- Co-op two-player HUD ---- */
-.hud-coop { display: flex; gap: 18px; align-items: center; }
-.hud-coop.hidden { display: none; }
-.hud-pcard { display: flex; align-items: center; gap: 5px; }
-.hud-ptag { font-size: 11px; letter-spacing: 1px; }
-.hud-ptag1 { color: var(--gold); }
-.hud-ptag2 { color: #c8ffa0; }
-.hud-mini-hp { display: flex; gap: 2px; align-items: center; }
-.hud-mini-hp .hp-pip { width: 8px; height: 8px; border-width: 1px; }
-.hud-mini-hearts { display: flex; gap: 3px; }
-.hud-mini-hearts .heart { font-size: 12px; }
-.hud-pcard.down { opacity: 0.45; }
+.hud-coop {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.hud-coop.hidden {
+  display: none;
+}
+.hud-pcard {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hud-ptag {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.hud-ptag1 {
+  color: var(--gold);
+}
+.hud-ptag2 {
+  color: #c8ffa0;
+}
+.hud-mini-hp {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.hud-mini-hp .hp-pip {
+  width: 8px;
+  height: 8px;
+  border-width: 1px;
+}
+.hud-mini-hearts {
+  display: flex;
+  gap: 3px;
+}
+.hud-mini-hearts .heart {
+  font-size: 12px;
+}
+.hud-pcard.down {
+  opacity: 0.45;
+}
 
-#hud-super { display: flex; gap: 3px; align-items: center; }
+#hud-super {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
 .super-pip {
   width: 8px;
   height: 13px;
@@ -148,10 +227,23 @@ html, body {
   border: 2px solid #11112a;
   transform: skewX(-12deg);
 }
-.super-on { background: #ff5fb0; }
-.super-off { background: #3a3a55; }
-.super-ready { animation: superPulse 0.5s steps(2) infinite; }
-@keyframes superPulse { 0% { background: #ff5fb0; } 100% { background: #ffd0e8; } }
+.super-on {
+  background: #ff5fb0;
+}
+.super-off {
+  background: #3a3a55;
+}
+.super-ready {
+  animation: superPulse 0.5s steps(2) infinite;
+}
+@keyframes superPulse {
+  0% {
+    background: #ff5fb0;
+  }
+  100% {
+    background: #ffd0e8;
+  }
+}
 
 /* ---- Viewport + canvas ---- */
 #viewport {
@@ -218,7 +310,9 @@ body.touch-on #pad-right {
 }
 
 /* Auto-fire on → the manual FIRE pad is redundant, so hide it. */
-body.autofire #btn-fire { display: none; }
+body.autofire #btn-fire {
+  display: none;
+}
 
 .touch-btn {
   width: 66px;
@@ -228,14 +322,17 @@ body.autofire #btn-fire { display: none; }
   background: rgba(17, 17, 42, 0.6);
   border: 3px solid var(--paper);
   color: var(--paper);
-  font-family: 'Press Start 2P', monospace;
+  font-family: "Press Start 2P", monospace;
   font-size: 20px;
   cursor: pointer;
   border-radius: 10px;
   touch-action: none;
 }
 
-.touch-btn.active { background: var(--gold); color: #11112a; }
+.touch-btn.active {
+  background: var(--gold);
+  color: #11112a;
+}
 
 .touch-jump {
   width: 80px;
@@ -247,7 +344,9 @@ body.autofire #btn-fire { display: none; }
   line-height: 14px;
 }
 
-.touch-jump.active { background: var(--gold); }
+.touch-jump.active {
+  background: var(--gold);
+}
 
 .touch-fire {
   width: 72px;
@@ -259,7 +358,9 @@ body.autofire #btn-fire { display: none; }
   line-height: 14px;
 }
 
-.touch-fire.active { background: var(--gold); }
+.touch-fire.active {
+  background: var(--gold);
+}
 
 .touch-dash {
   width: 60px;
@@ -271,7 +372,9 @@ body.autofire #btn-fire { display: none; }
   line-height: 14px;
 }
 
-.touch-dash.active { background: var(--gold); }
+.touch-dash.active {
+  background: var(--gold);
+}
 
 .touch-super {
   width: 60px;
@@ -283,7 +386,9 @@ body.autofire #btn-fire { display: none; }
   line-height: 14px;
 }
 
-.touch-super.active { background: var(--gold); }
+.touch-super.active {
+  background: var(--gold);
+}
 
 .touch-swap {
   width: 60px;
@@ -295,7 +400,9 @@ body.autofire #btn-fire { display: none; }
   line-height: 14px;
 }
 
-.touch-swap.active { background: var(--cyan); }
+.touch-swap.active {
+  background: var(--cyan);
+}
 
 /* ---- Grade badge (§7 letter grades) ---- */
 .grade-badge {
@@ -308,22 +415,51 @@ body.autofire #btn-fire { display: none; }
   background: var(--paper);
 }
 .grade-badge[data-grade="S+"],
-.grade-badge[data-grade="S"] { background: #ffd94a; color: #5a3a00; }
-.grade-badge[data-grade="A"] { background: #58d68a; color: #0a2a16; }
-.grade-badge[data-grade="B"] { background: #7ef0ff; }
-.grade-badge[data-grade="C"] { background: #ff8a7a; }
-.grade-badge[data-grade="—"] { background: #3a3a55; color: var(--paper); }
+.grade-badge[data-grade="S"] {
+  background: #ffd94a;
+  color: #5a3a00;
+}
+.grade-badge[data-grade="A"] {
+  background: #58d68a;
+  color: #0a2a16;
+}
+.grade-badge[data-grade="B"] {
+  background: #7ef0ff;
+}
+.grade-badge[data-grade="C"] {
+  background: #ff8a7a;
+}
+.grade-badge[data-grade="—"] {
+  background: #3a3a55;
+  color: var(--paper);
+}
 
 /* Animated grade tally (§11.3): the freshly-earned grade stamps in when the
    clear card shows; the "best" badge + time line fade in just after. */
 @keyframes gradeStamp {
-  0% { transform: scale(2.4) rotate(-12deg); opacity: 0; }
-  60% { transform: scale(0.9) rotate(3deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0% {
+    transform: scale(2.4) rotate(-12deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.9) rotate(3deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 @keyframes tallyFade {
-  0%, 35% { opacity: 0; transform: translateY(4px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0%,
+  35% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .overlay:not(.hidden) #lu-grade,
 .overlay:not(.hidden) #win-grade {
@@ -354,25 +490,37 @@ body.autofire #btn-fire { display: none; }
   overflow-y: auto;
 }
 
-.overlay.hidden { display: none; }
+.overlay.hidden {
+  display: none;
+}
 
 /* Each screen fades + lifts in when it becomes visible, so swaps between
    title / level-clear / game-over / win don't snap harshly. */
 @keyframes overlayIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.overlay:not(.hidden) { animation: overlayIn 0.32s ease both; }
+.overlay:not(.hidden) {
+  animation: overlayIn 0.32s ease both;
+}
 
 /* Respect the OS "reduce motion" setting for the overlay fade. */
 @media (prefers-reduced-motion: reduce) {
-  .overlay:not(.hidden) { animation: none; }
+  .overlay:not(.hidden) {
+    animation: none;
+  }
 }
 
 /* Art-deco card frame around every overlay: a gold double-rule inset from the
    edges with an ink keyline and a soft inner vignette, behind the content. */
 .overlay::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 16px;
   border: 3px double var(--gold);
@@ -386,7 +534,7 @@ body.autofire #btn-fire { display: none; }
 }
 /* Four corner studs (gold diamonds) clamped to the frame corners. */
 .overlay::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 9px;
   z-index: -1;
@@ -398,13 +546,27 @@ body.autofire #btn-fire { display: none; }
     radial-gradient(var(--gold) 38%, transparent 42%);
   background-repeat: no-repeat;
   background-size: 12px 12px;
-  background-position: left top, right top, left bottom, right bottom;
+  background-position:
+    left top,
+    right top,
+    left bottom,
+    right bottom;
 }
 
-#ov-title { background: rgba(17, 17, 42, 0.82); gap: 18px; }
-#ov-gameover { background: rgba(40, 12, 16, 0.86); gap: 18px; }
-#ov-levelup { background: rgba(20, 20, 51, 0.88); }
-#ov-win { background: rgba(17, 42, 28, 0.86); }
+#ov-title {
+  background: rgba(17, 17, 42, 0.82);
+  gap: 18px;
+}
+#ov-gameover {
+  background: rgba(40, 12, 16, 0.86);
+  gap: 18px;
+}
+#ov-levelup {
+  background: rgba(20, 20, 51, 0.88);
+}
+#ov-win {
+  background: rgba(17, 42, 28, 0.86);
+}
 
 .ov-logo {
   font-size: 46px;
@@ -428,7 +590,7 @@ body.autofire #btn-fire { display: none; }
 }
 .ov-sub::before,
 .ov-sub::after {
-  content: '';
+  content: "";
   width: 46px;
   height: 3px;
   background: var(--gold);
@@ -442,16 +604,44 @@ body.autofire #btn-fire { display: none; }
   line-height: 22px;
 }
 
-.ov-big { font-size: 36px; }
-.ov-big-red { color: var(--red); text-shadow: 5px 5px 0 #5a0f1a; }
-.ov-big-gold { font-size: 34px; color: var(--gold); text-shadow: 5px 5px 0 #b3842a; }
-.ov-big-green { font-size: 34px; color: var(--green); text-shadow: 5px 5px 0 #1f5a38; }
+.ov-big {
+  font-size: 36px;
+}
+.ov-big-red {
+  color: var(--red);
+  text-shadow: 5px 5px 0 #5a0f1a;
+}
+.ov-big-gold {
+  font-size: 34px;
+  color: var(--gold);
+  text-shadow: 5px 5px 0 #b3842a;
+}
+.ov-big-green {
+  font-size: 34px;
+  color: var(--green);
+  text-shadow: 5px 5px 0 #1f5a38;
+}
 
-.ov-line { font-size: 11px; color: var(--paper); letter-spacing: 2px; line-height: 22px; }
-.ov-line-gold { color: var(--gold); }
-.ov-line-cyan { font-size: 9px; color: var(--cyan); letter-spacing: 1px; }
-.ov-line-purple { color: var(--purple); }
-.ov-center { text-align: center; }
+.ov-line {
+  font-size: 11px;
+  color: var(--paper);
+  letter-spacing: 2px;
+  line-height: 22px;
+}
+.ov-line-gold {
+  color: var(--gold);
+}
+.ov-line-cyan {
+  font-size: 9px;
+  color: var(--cyan);
+  letter-spacing: 1px;
+}
+.ov-line-purple {
+  color: var(--purple);
+}
+.ov-center {
+  text-align: center;
+}
 
 .ov-prompt {
   margin-top: 14px;
@@ -466,9 +656,27 @@ body.autofire #btn-fire { display: none; }
   opacity: 0.85;
 }
 
+/* Author credit pinned to the title screen's bottom-right corner. Clears the
+   safe-area on phones and stays subtle so it never competes with the menu. */
+.ov-credit {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  margin: 0;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  opacity: 0.7;
+}
+
 /* ---- Co-op lobby ---- */
-#ov-lobby { background: rgba(17, 17, 42, 0.9); gap: 18px; }
-.lobby-logo { font-size: 40px; }
+#ov-lobby {
+  background: rgba(17, 17, 42, 0.9);
+  gap: 18px;
+}
+.lobby-logo {
+  font-size: 40px;
+}
 
 .lobby-section {
   display: flex;
@@ -476,7 +684,9 @@ body.autofire #btn-fire { display: none; }
   align-items: center;
   gap: 14px;
 }
-.lobby-section.hidden { display: none; }
+.lobby-section.hidden {
+  display: none;
+}
 
 .lobby-btn {
   font-family: inherit;
@@ -489,8 +699,13 @@ body.autofire #btn-fire { display: none; }
   padding: 12px 22px;
   cursor: pointer;
 }
-.lobby-btn:hover { background: #ffe88a; }
-.lobby-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #b3842a; }
+.lobby-btn:hover {
+  background: #ffe88a;
+}
+.lobby-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #b3842a;
+}
 
 .lobby-code {
   font-size: 40px;
@@ -515,11 +730,33 @@ body.autofire #btn-fire { display: none; }
 }
 
 /* ---- Animations (match prototype) ---- */
-@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-@keyframes pulse { 0%, 49% { transform: scale(1); } 50%, 100% { transform: scale(1.05); } }
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes pulse {
+  0%,
+  49% {
+    transform: scale(1);
+  }
+  50%,
+  100% {
+    transform: scale(1.05);
+  }
+}
 
-.blink { animation: blink 1s steps(1) infinite; }
-.pulse { animation: pulse 0.7s steps(1) infinite; }
+.blink {
+  animation: blink 1s steps(1) infinite;
+}
+.pulse {
+  animation: pulse 0.7s steps(1) infinite;
+}
 
 /* ---- Colorblind-friendly UI palette ----
    Toggled via #cabinet.cb (pause menu → COLORBLIND MODE). Remaps the red/green
@@ -527,23 +764,38 @@ body.autofire #btn-fire { display: none; }
    vermillion, "good"/health greens become blue, so the two never collide for
    deuteranopia/protanopia. Shapes + letters already disambiguate elsewhere. */
 #cabinet.cb {
-  --red: #d55e00;     /* vermillion — hearts / GAME OVER */
-  --green: #56b4e9;   /* sky blue — "good" accents */
+  --red: #d55e00; /* vermillion — hearts / GAME OVER */
+  --green: #56b4e9; /* sky blue — "good" accents */
   --cyan: #56b4e9;
-  --purple: #cc79a7;  /* reddish-purple */
+  --purple: #cc79a7; /* reddish-purple */
 }
-#cabinet.cb .hp-on { background: #56b4e9; }      /* HP pips: blue, not green */
-#cabinet.cb .hud-ptag2 { color: #56b4e9; }       /* P2 tag: blue vs P1 gold */
-#cabinet.cb .grade-badge[data-grade="A"] { background: #56b4e9; color: #04243a; }
-#cabinet.cb .grade-badge[data-grade="C"] { background: #e69f00; color: #3a2600; }
+#cabinet.cb .hp-on {
+  background: #56b4e9;
+} /* HP pips: blue, not green */
+#cabinet.cb .hud-ptag2 {
+  color: #56b4e9;
+} /* P2 tag: blue vs P1 gold */
+#cabinet.cb .grade-badge[data-grade="A"] {
+  background: #56b4e9;
+  color: #04243a;
+}
+#cabinet.cb .grade-badge[data-grade="C"] {
+  background: #e69f00;
+  color: #3a2600;
+}
 #cabinet.cb .ov-big-green,
-#cabinet.cb .ov-big-gold { color: #56b4e9; text-shadow: 5px 5px 0 #04243a; }
+#cabinet.cb .ov-big-gold {
+  color: #56b4e9;
+  text-shadow: 5px 5px 0 #04243a;
+}
 
 /* ---- Portrait rotate hint ----
    This is a landscape game. On a portrait touch screen the cabinet would shrink
    to a useless strip, so we cover it with a "rotate" nudge instead. Pure CSS:
    shown only on a coarse-pointer device held in portrait. */
-#rotate-hint { display: none; }
+#rotate-hint {
+  display: none;
+}
 
 @media (orientation: portrait) and (pointer: coarse) {
   #rotate-hint {
@@ -562,7 +814,9 @@ body.autofire #btn-fire { display: none; }
   }
   /* The pads make no sense in portrait — the rotate hint owns the screen. */
   body.touch-on #pad-left,
-  body.touch-on #pad-right { display: none; }
+  body.touch-on #pad-right {
+    display: none;
+  }
 }
 
 .rotate-icon {
@@ -577,20 +831,40 @@ body.autofire #btn-fire { display: none; }
   color: var(--paper);
 }
 @keyframes rotateNudge {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(90deg); }
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(90deg);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rotate-icon { animation: none; }
+  .rotate-icon {
+    animation: none;
+  }
 }
 
 /* Shrink the touch pads a touch on very short (landscape phone) viewports so
    they don't crowd the play area. */
 @media (max-height: 400px) {
-  .touch-btn { width: 54px; height: 54px; font-size: 16px; }
-  .touch-jump { width: 64px; height: 64px; }
-  .touch-fire { width: 58px; height: 58px; }
+  .touch-btn {
+    width: 54px;
+    height: 54px;
+    font-size: 16px;
+  }
+  .touch-jump {
+    width: 64px;
+    height: 64px;
+  }
+  .touch-fire {
+    width: 58px;
+    height: 58px;
+  }
   .touch-dash,
   .touch-super,
-  .touch-swap { width: 50px; height: 50px; }
+  .touch-swap {
+    width: 50px;
+    height: 50px;
+  }
 }
