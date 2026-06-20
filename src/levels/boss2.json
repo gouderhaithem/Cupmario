@@ -14,6 +14,7 @@
   "moveMode": "lumber",
   "boltTint": "#bfae93",
   "boltTintHi": "#f2e6cf",
+  "boltMotif": "rock",
   "phases": [
     { "toHpPct": 70, "cadence": 64, "patterns": ["spitArc", "groundPound", "chargeDash"] },
     { "toHpPct": 45, "cadence": 54, "patterns": ["groundPound", "ringBurst", "chargeDash", "boltFan"] },

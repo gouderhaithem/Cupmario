@@ -89,6 +89,22 @@ export function spawnSkidDust(state: GameState, cx: number, feetY: number, slide
   }
 }
 
+/** A round pop of smoke where an enemy is destroyed — the cartoon "poof". */
+export function spawnPoof(state: GameState, cx: number, cy: number): void {
+  for (let i = 0; i < 6; i++) {
+    const ang = (i / 6) * Math.PI * 2;
+    add(state, {
+      x: cx + Math.cos(ang) * 4,
+      y: cy + Math.sin(ang) * 4,
+      vx: Math.cos(ang) * (0.8 + Math.random() * 0.8),
+      vy: Math.sin(ang) * (0.8 + Math.random() * 0.8) - 0.4,
+      life: 14 + ((Math.random() * 6) | 0),
+      max: 20,
+      r: 4 + Math.random() * 3,
+    });
+  }
+}
+
 /** A small symmetric kick of dust as Pip leaves the ground. */
 export function spawnJumpDust(state: GameState, cx: number, feetY: number): void {
   for (let i = 0; i < 4; i++) {

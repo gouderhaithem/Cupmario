@@ -5,6 +5,8 @@
 
 import { sfx } from '../engine/audio';
 import { hitStop, shakeScreen } from '../engine/effects';
+import { spawnPoof } from './puff';
+import { spawnBurst } from './sparkle';
 import {
   BOMBER_AIM_X,
   BOMBER_DROP_CD,
@@ -56,6 +58,16 @@ import type { Enemy } from '../types';
 const STOMP_TOP = 22;
 const POP_LIFE = 36;
 
+/** The death-burst shard color for each enemy kind (its body tone). */
+function killBurstColor(kind: Enemy['kind']): string {
+  if (kind === 'shooter') return PALETTE.spit;
+  if (kind === 'flyer' || kind === 'bomber') return PALETTE.flyer;
+  if (kind === 'turret') return PALETTE.turret;
+  if (kind === 'mortar') return PALETTE.mortar;
+  if (kind === 'charger') return PALETTE.charger;
+  return PALETTE.foe;
+}
+
 /**
  * Kill an enemy: score it (×`mult` for stomp chains), shake/sfx, float a "+score"
  * pop, and — for a Spitter — drop a power mushroom. Shared by stomp + bolt paths.
@@ -77,6 +89,13 @@ export function killEnemy(state: GameState, e: Enemy, mult = 1, pitchStep = 0): 
   }
   gain = Math.round(gain * mult);
   state.score += gain;
+  // Juice: a poof of smoke + a burst of shards in the foe's color, and a
+  // one-frame freeze that snaps harder on a stomp chain.
+  const cx = e.x + e.w / 2;
+  const cy = e.y + e.h / 2;
+  spawnPoof(state, cx, cy);
+  spawnBurst(state, cx, cy, killBurstColor(e.kind), 8 + mult * 2);
+  hitStop(state, HITSTOP_STOMP + Math.min(mult, 3));
   shakeScreen(state, SHAKE_STOMP);
   sfx('stomp', pitchStep);
   const text = mult > 1 ? `+${gain} x${mult}` : `+${gain}`;

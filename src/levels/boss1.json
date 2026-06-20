@@ -15,6 +15,7 @@
   "homeSide": "right",
   "boltTint": "#8fd96a",
   "boltTintHi": "#d6ffb0",
+  "boltMotif": "seed",
   "phases": [
     { "toHpPct": 66, "cadence": 70, "patterns": ["spitArc", "rootPillars", "summonWalkers"] },
     { "toHpPct": 33, "cadence": 56, "patterns": ["rootPillars", "boltFan", "pinkRain", "summonWalkers"] },

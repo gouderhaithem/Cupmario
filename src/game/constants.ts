@@ -172,6 +172,8 @@ export const BOSS_H = 88;
 export const BOSS_TELEGRAPH = 26;
 /** Frames the boss flashes white after taking a hit. */
 export const BOSS_HURT_FLASH = 8;
+/** Frames of attack "snap" (overshoot stretch + smear) after a pattern fires. */
+export const BOSS_LUNGE = 12;
 /** Damage per hit by weapon tier. */
 export const BOSS_BOLT_DAMAGE = 1; // a normal player bolt
 export const BOSS_EX_DAMAGE = 3; // an EX (piercing) bolt
@@ -508,6 +510,22 @@ export const SKINS: Skin[] = [
   { hair: '#7a1f0a', shirt: '#ff6a2b', shirtHi: '#ffb05c', pants: '#3a1408', shoe: '#1a0a04', brim: '#a83410' },
   // 5 — THE GLITCH GATE: neon magenta
   { hair: '#2a0a3a', shirt: '#e83fb0', shirtHi: '#ff8fe0', pants: '#1a0a2a', shoe: '#0c0418', brim: '#8a1f6a' },
+];
+
+/**
+ * Per-level enemy recolor (a CSS canvas filter applied around the enemy draw
+ * pass), so each stage's roster reads as a distinct palette. Index = level
+ * index; out-of-range falls back to 'none'. Hue-rotate keeps each enemy kind's
+ * relative shading + tells intact while shifting the whole roster's color
+ * family, so kinds stay distinguishable but levels never look the same.
+ */
+export const ENEMY_FILTERS: readonly string[] = [
+  'none', // 0 — grassland: the base palette enemies were tuned in
+  'hue-rotate(45deg) saturate(1.1)', // 1
+  'hue-rotate(-55deg) saturate(1.15)', // 2 — warmer / rust
+  'hue-rotate(120deg)', // 3 — teal / verdigris
+  'hue-rotate(165deg) saturate(1.1)', // 4 — ember inversion
+  'hue-rotate(220deg) saturate(1.25) brightness(1.05)', // 5 — glitch neon
 ];
 
 /** The online co-op partner's Pip — a fixed lime/violet look, distinct from

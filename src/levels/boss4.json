@@ -16,6 +16,7 @@
   "homeSide": "center",
   "boltTint": "#c77dff",
   "boltTintHi": "#f0d6ff",
+  "boltMotif": "glitch",
   "phases": [
     { "toHpPct": 80, "cadence": 56, "patterns": ["spiralShot", "boltFan", "ringBurst"] },
     { "toHpPct": 60, "cadence": 48, "patterns": ["spiralShot", "aimedVolley", "pinkRain", "ringBurst"] },

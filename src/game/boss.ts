@@ -19,6 +19,7 @@ import {
   BOSS_H,
   BOSS_HURT_FLASH,
   BOSS_KO_FRAMES,
+  BOSS_LUNGE,
   BOSS_TELEGRAPH,
   BOSS_W,
   FLASH_FRAMES,
@@ -39,6 +40,7 @@ import {
 import { telegraphFrames } from './difficulty';
 import { bossDefeated, hitPlayer } from './flow';
 import { runPattern } from './patterns';
+import { spawnBurst } from './sparkle';
 import { nearestPawn } from './state';
 import type { GameState } from './state';
 import type { Boss, BossConfig, BossSide, Level } from '../types';
@@ -86,10 +88,12 @@ export function makeBoss(cfg: BossConfig, level: Level, index = 0): Boss {
     dashPhase: 0,
     dashDir: 1,
     hurtFlash: 0,
+    lunge: 0,
     dead: false,
     moveMode,
     boltTint: cfg.boltTint,
     boltTintHi: cfg.boltTintHi,
+    boltMotif: cfg.boltMotif,
     swayT: 0,
     spiralA: 0,
     vy: 0,
@@ -111,6 +115,7 @@ export function resetBoss(boss: Boss): void {
   boss.dashPhase = 0;
   boss.dashDir = 1;
   boss.hurtFlash = 0;
+  boss.lunge = 0;
   boss.dead = false;
   boss.swayT = 0;
   boss.spiralA = 0;
@@ -128,10 +133,13 @@ function hurtBoss(state: GameState, dmg: number): void {
   if (!boss || boss.dead) return;
   boss.hp = Math.max(0, boss.hp - dmg);
   boss.hurtFlash = BOSS_HURT_FLASH;
+  // Juice: shards fly off the impact in the player's bolt color.
+  spawnBurst(state, boss.x + boss.w / 2, boss.y + boss.h * 0.4, PALETTE.boltPlayerHi, 6, 2.4);
   shakeScreen(state, SHAKE_STOMP);
   sfx('bossHurt');
   if (boss.hp <= 0) {
     boss.dead = true;
+    spawnBurst(state, boss.x + boss.w / 2, boss.y + boss.h / 2, PALETTE.bossCrown, 20, 4); // KO blast
     state.bossKo = BOSS_KO_FRAMES;
     state.flash = FLASH_FRAMES;
     shakeScreen(state, SHAKE_HURT);
@@ -256,6 +264,7 @@ export function updateBoss(state: GameState): boolean {
 
   boss.bob += BOSS_BOB_SPEED;
   if (boss.hurtFlash > 0) boss.hurtFlash -= 1;
+  if (boss.lunge > 0) boss.lunge -= 1;
 
   // Intro hold ("READY? / FIGHT!"): the boss waits before it starts attacking.
   if (state.bossIntro > 0) {
@@ -320,6 +329,7 @@ export function updateBoss(state: GameState): boolean {
         runPattern(state, boss, boss.pending);
         boss.pending = null;
         boss.attackCd = boss.cadence;
+        boss.lunge = BOSS_LUNGE; // snap-release: the body recoils as the attack fires
       }
     } else if (boss.attackCd > 0) {
       boss.attackCd -= 1;

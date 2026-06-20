@@ -14,6 +14,7 @@
   "moveMode": "stoke",
   "boltTint": "#9fe8ff",
   "boltTintHi": "#eafcff",
+  "boltMotif": "ice",
   "phases": [
     { "toHpPct": 75, "cadence": 60, "patterns": ["boltFan", "floorPulse", "ringBurst"] },
     { "toHpPct": 50, "cadence": 50, "patterns": ["boltFan", "pinkRain", "sparkNova"] },

@@ -4,9 +4,118 @@
 
 import { PALETTE, TILE } from '../../../game/constants';
 import type { Checkpoint, Hazard, Mushroom, ParryOrb, Projectile } from '../../../types';
-import { PAPER, inkEllipse, inkRoundRect, inkTri, softHi } from '../../ink';
+import { PAPER, inkEllipse, inkPath, inkRoundRect, inkTri, softHi } from '../../ink';
 
 const STILL = { frame: 0, boil: false };
+
+/** Chromatic-aberration split colors for THE OVERCLOCK's glitch rounds. */
+const GLITCH_R = '#ff4fd0';
+const GLITCH_B = '#4ff0ff';
+
+/** One outward-pointing spike (a thin triangle) for the seed-pod motif. */
+function spike(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, a: number, core: string): void {
+  const tip: [number, number] = [cx + Math.cos(a) * (r + 5), cy + Math.sin(a) * (r + 5)];
+  const perp = a + Math.PI / 2;
+  const bx = cx + Math.cos(a) * r * 0.8;
+  const by = cy + Math.sin(a) * r * 0.8;
+  inkTri(
+    ctx,
+    tip[0], tip[1],
+    bx + Math.cos(perp) * 2.5, by + Math.sin(perp) * 2.5,
+    bx - Math.cos(perp) * 2.5, by - Math.sin(perp) * 2.5,
+    core,
+    STILL,
+  );
+}
+
+/**
+ * A boss's signature weapon shape, themed by `b.motif`, drawn in the boss's
+ * tint. Each reads as a different weapon at a glance: thorny seed, jagged rock,
+ * ice shard (rotated along flight), or a flickering RGB-split data block.
+ */
+function drawBoltMotif(
+  ctx: CanvasRenderingContext2D,
+  b: Projectile,
+  cx: number,
+  cy: number,
+  core: string,
+  hi: string,
+  frame: number,
+): void {
+  const r = b.w / 2;
+  const ang = Math.atan2(b.vy, b.vx);
+
+  if (b.motif === 'seed') {
+    for (let i = 0; i < 6; i++) spike(ctx, cx, cy, r, (i / 6) * Math.PI * 2 + frame * 0.04, core);
+    inkEllipse(ctx, cx, cy, r, r * 1.05, core, STILL);
+    inkEllipse(ctx, cx, cy - r * 0.85, r * 0.4, r * 0.32, core, STILL); // little cap nub on top
+    softHi(ctx, cx - r * 0.3, cy - r * 0.25, r * 0.4, r * 0.4, hi, 0.9);
+    return;
+  }
+
+  if (b.motif === 'rock') {
+    const pts: Array<[number, number]> = [
+      [-1, -0.55], [0.35, -1], [1, -0.2], [0.7, 0.85], [-0.45, 1], [-1, 0.3],
+    ];
+    inkPath(
+      ctx,
+      (c) => {
+        pts.forEach(([px, py], i) => {
+          const X = cx + px * r;
+          const Y = cy + py * r;
+          if (i) c.lineTo(X, Y);
+          else c.moveTo(X, Y);
+        });
+        c.closePath();
+      },
+      core,
+      STILL,
+    );
+    softHi(ctx, cx - r * 0.2, cy - r * 0.3, r * 0.45, r * 0.35, hi, 0.55);
+    return;
+  }
+
+  if (b.motif === 'ice') {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(ang);
+    inkPath(
+      ctx,
+      (c) => {
+        c.moveTo(r * 1.5, 0);
+        c.lineTo(0, r * 0.72);
+        c.lineTo(-r * 1.1, 0);
+        c.lineTo(0, -r * 0.72);
+        c.closePath();
+      },
+      core,
+      STILL,
+    );
+    ctx.strokeStyle = hi;
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.3, -r * 0.18);
+    ctx.lineTo(r * 0.7, 0);
+    ctx.stroke();
+    ctx.restore();
+    softHi(ctx, cx, cy, r * 0.3, r * 0.3, PAPER.white, 0.7);
+    return;
+  }
+
+  // glitch — RGB-split data block that flickers frame to frame.
+  const j = (frame % 4) - 1.5;
+  const s = r * 1.35;
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = GLITCH_R;
+  ctx.fillRect(cx - s / 2 - 2 + j, cy - s / 2, s, s);
+  ctx.fillStyle = GLITCH_B;
+  ctx.fillRect(cx - s / 2 + 2 - j, cy - s / 2, s, s);
+  ctx.restore();
+  inkRoundRect(ctx, cx - s / 2, cy - s / 2, s, s, 2, core, STILL);
+  softHi(ctx, cx - s * 0.15, cy - s * 0.15, s * 0.25, s * 0.25, hi, 0.9);
+}
 
 /** A spinning coin: outlined gold disc whose width oscillates per coin. */
 export function drawCoinInk(ctx: CanvasRenderingContext2D, cx: number, cy: number, idx: number, frame: number): void {
@@ -73,6 +182,13 @@ export function drawBoltInk(ctx: CanvasRenderingContext2D, b: Projectile, frame:
 
   const core = b.from === 'player' ? PALETTE.boltPlayer : b.tint ?? PALETTE.boltEnemy;
   const hi = b.from === 'player' ? PALETTE.boltPlayerHi : b.tintHi ?? PALETTE.boltEnemyHi;
+
+  // Boss signature weapon shape overrides the generic style (but never the
+  // parryable pink cue, which already returned above).
+  if (b.motif) {
+    drawBoltMotif(ctx, b, cx, cy, core, hi, frame);
+    return;
+  }
 
   if (b.style === 'dart') {
     // Fast tracer along its velocity.

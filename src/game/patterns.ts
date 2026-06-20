@@ -72,6 +72,7 @@ function bolt(
     parryable: opts?.parryable,
     grav: opts?.grav,
     style: opts?.style,
+    motif: boss.boltMotif,
     tint: boss.boltTint,
     tintHi: boss.boltTintHi,
   });
