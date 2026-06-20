@@ -10,11 +10,9 @@ import { sfx } from '../engine/audio';
 import { hitStop, shakeScreen } from '../engine/effects';
 import {
   HITSTOP_STOMP,
-  ORB_RESPAWN,
   PALETTE,
   PARRY_BOUNCE,
   PARRY_FLASH,
-  PARRY_FORWARD,
   PARRY_IFRAMES,
   SHAKE_STOMP,
   SUPER_MAX,
@@ -62,24 +60,14 @@ export function tryParry(state: GameState, pawn: Pawn): void {
   }
   if (!attempt) return;
 
-  // Combat parry: deflect a pink enemy bolt.
+  // Combat parry: deflect a pink enemy bolt. (Pink orbs are bounce pads now —
+  // they auto-launch Pip across the gap in orbs.ts, with no timing required.)
   for (const b of state.projectiles) {
     if (!b.alive || b.from !== 'enemy' || !b.parryable) continue;
     if (overlaps(b.x, b.y, b.w, b.h, p.x, p.y, p.w, p.h)) {
       b.alive = false;
       rewardParry(state, pawn, b.x, b.y);
       return; // one parry per press
-    }
-  }
-
-  // Traversal parry: bounce off a pink orb and carry forward across the gap.
-  for (const orb of state.parryOrbs) {
-    if (orb.cooldown > 0) continue;
-    if (overlaps(orb.x, orb.y, orb.w, orb.h, p.x, p.y, p.w, p.h)) {
-      orb.cooldown = ORB_RESPAWN;
-      rewardParry(state, pawn, orb.x + orb.w / 2, orb.y);
-      p.vx = p.face * PARRY_FORWARD; // forward launch — the traversal half
-      return;
     }
   }
 }

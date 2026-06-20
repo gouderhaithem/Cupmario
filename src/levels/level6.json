@@ -2,7 +2,7 @@
   "theme": "night",
   "flagCol": 77,
   "_name": "THE GLITCH GATE",
-  "_focus": "Parry. Every chasm is crossed by parrying floating pink orbs mid-air (up + forward bounce), and Spitters line the route so you also parry their pink bolts. The gauntlet before THE OVERCLOCK.",
+  "_focus": "Bounce traversal. Every chasm is crossed by touching floating pink orbs mid-air — they auto-bounce Pip up + forward across the gap (no timing, no damage). Spitters line the route so you also parry their pink bolts. The gauntlet before THE OVERCLOCK.",
   "_pacing": "0-7 parry a Spitter's bolts · 8-25 first two orb crossings · 26-48 plat climb + weapon block + a Drone · 49-68 the long double crossing · 69-77 run to the gate.",
   "pits": [[8, 12], [21, 25], [35, 39], [49, 53], [64, 68]],
   "plats": [
