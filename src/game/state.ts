@@ -1,7 +1,7 @@
 // The single GameState object. All systems read/write through it; render.ts
 // only reads. Per-frame mutation here is intentional (see CLAUDE.md rules 4-5).
 
-import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, GameMode, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Puff, Projectile, Screen, Sparkle, Style, WeaponId } from '../types';
+import type { Boss, Checkpoint, Crumble, Difficulty, Enemy, Hazard, Keys, Level, Mushroom, MovingPlatform, ParryOrb, Player, Pop, Puff, Projectile, Screen, Sparkle, Style, WeaponId } from '../types';
 import type { Role } from '../engine/net';
 
 /**
@@ -50,11 +50,18 @@ import { buildLevel, spawnCheckpoints, spawnCrumbles, spawnEnemies, spawnMovers,
 import { LEVELS } from './levels';
 import { loadSettings } from './settings';
 
+/** An on-screen onboarding hint banner (transient; not persisted). */
+export interface ActiveHint {
+  text: string;
+  /** Frames remaining; fades as it nears 0. */
+  life: number;
+  /** Initial life, for the fade curve. */
+  max: number;
+}
+
 export interface GameState {
   screen: Screen;
-  /** Active sequence: full campaign or a bosses-only Boss Rush. */
-  mode: GameMode;
-  /** Index into the active sequence (drives level↔boss order, see flow.ts). */
+  /** Index into the campaign sequence (drives level↔boss order, see flow.ts). */
   stageIndex: number;
   /** Highlighted entry on the stage-select screen. */
   menuIndex: number;
@@ -85,6 +92,8 @@ export interface GameState {
   puffs: Puff[];
   /** Transient bright twinkles from coin pickups (FX only). */
   sparks: Sparkle[];
+  /** Active first-run onboarding hint banner (transient; null when none). */
+  hint: ActiveHint | null;
 
   score: number;
   coins: number;
@@ -430,7 +439,6 @@ export function createState(): GameState {
   // (which omits those fields) to GameState until the accessors are attached.
   const state = {
     screen: 'title',
-    mode: 'campaign',
     stageIndex: 0,
     menuIndex: 0,
     levelIndex,
@@ -448,6 +456,7 @@ export function createState(): GameState {
     pops: [],
     puffs: [],
     sparks: [],
+    hint: null,
     score: 0,
     coins: 0,
     best: loadBest(),

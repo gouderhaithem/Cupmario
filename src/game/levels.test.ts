@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BOSSES, BOSS_RUSH, CAMPAIGN, LEVELS } from './levels';
+import { BOSSES, CAMPAIGN, LEVELS } from './levels';
 
 describe('campaign wiring', () => {
   it('references only valid level/boss indices', () => {
@@ -21,16 +21,6 @@ describe('campaign wiring', () => {
   it('uses every run level somewhere in the campaign', () => {
     const used = new Set(CAMPAIGN.filter((s) => s.kind === 'level').map((s) => (s as { level: number }).level));
     expect(used.size).toBe(LEVELS.length);
-  });
-});
-
-describe('boss rush', () => {
-  it('is every boss, in order, with no run levels', () => {
-    expect(BOSS_RUSH).toHaveLength(BOSSES.length);
-    BOSS_RUSH.forEach((stage, i) => {
-      expect(stage.kind).toBe('boss');
-      expect((stage as { boss: number }).boss).toBe(i);
-    });
   });
 });
 

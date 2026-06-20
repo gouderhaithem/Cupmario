@@ -3,9 +3,6 @@
 
 export type Screen = 'title' | 'play' | 'levelup' | 'gameover' | 'win' | 'boss' | 'select' | 'lobby';
 
-/** Which sequence drives the run: the full campaign or a bosses-only rush. */
-export type GameMode = 'campaign' | 'bossrush';
-
 /**
  * Difficulty tier (§12.2 / §13.4). `assist` eases the game (+HP, slower bolts,
  * S-rank locked); `normal` is the default; `expert` tightens it (faster bolts,
@@ -244,6 +241,17 @@ export interface Mushroom {
  */
 export type BoltStyle = 'bolt' | 'dart' | 'lob' | 'spark';
 
+/**
+ * A boss's signature weapon flavor — overlays a themed projectile shape on top
+ * of the gameplay `style`, so each boss's fire reads as *its* weapon:
+ *   seed   — BARKBROOD: a thorny spiked seed-pod
+ *   rock   — GRANITE: a jagged faceted stone chunk
+ *   ice    — RIME: a sharp crystalline shard with a glint
+ *   glitch — THE OVERCLOCK: a flickering RGB-split data block
+ * Parryable (pink) shots ignore the motif — they must stay the readable pink cue.
+ */
+export type BoltMotif = 'seed' | 'rock' | 'ice' | 'glitch';
+
 export interface Projectile {
   x: number;
   y: number;
@@ -256,6 +264,8 @@ export interface Projectile {
   from: 'player' | 'enemy';
   /** Visual style (defaults to 'bolt' when absent). */
   style?: BoltStyle;
+  /** Boss signature weapon motif (themed shape); absent for enemy/player fire. */
+  motif?: BoltMotif;
   /** Per-shot color override for non-parryable enemy fire (core + highlight). */
   tint?: string;
   tintHi?: string;
@@ -502,6 +512,8 @@ export interface BossConfig {
   /** Per-boss bolt color so each fight's fire reads as that character. */
   boltTint?: string;
   boltTintHi?: string;
+  /** Per-boss weapon motif (themed projectile shape). */
+  boltMotif?: BoltMotif;
 }
 
 /** The live boss during a fight. */
@@ -544,6 +556,8 @@ export interface Boss {
   dashDir: -1 | 1;
   /** Frames of white hurt-flash after taking damage. */
   hurtFlash: number;
+  /** Frames of attack-snap left (drives the release overshoot + motion smear); 0 at rest. */
+  lunge: number;
   /** True once HP hits 0 (KO sequence playing). */
   dead: boolean;
   /** Movement style this fight (planted / lumber / stoke / hop). */
@@ -555,6 +569,8 @@ export interface Boss {
   /** Per-boss bolt color (passed onto fired bolts). */
   boltTint?: string;
   boltTintHi?: string;
+  /** Per-boss weapon motif (passed onto fired bolts). */
+  boltMotif?: BoltMotif;
   /** Sway / stoke accumulator (drives idle sway and the stoke shuffle). */
   swayT: number;
   /** Rotating-arm angle accumulator (spiralShot). */

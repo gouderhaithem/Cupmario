@@ -41,9 +41,8 @@ boiling-ink outline on everything that moves.
 - **Per-biome look** — day meadow, moonlit night, crystal cavern, industrial
   foundry; each with its own sky, backdrop, and tile palette.
 - **Four bosses** with multi-phase patterns — BARKBROOD (oak), GRANITE (stone
-  golem), RIME (ice spire), and **THE OVERCLOCK** (airborne finale) — plus a
-  **Boss Rush** mode and three mechanic-showcase levels (ferries, dash-gaps,
-  parry-traversal).
+  golem), RIME (ice spire), and **THE OVERCLOCK** (airborne finale) — plus three
+  mechanic-showcase levels (ferries, dash-gaps, parry-traversal).
 - **Real platforming kit** — running, variable jump, duck/fast-fall, dash,
   wall-jump, shooting, a **parry** on pink bolts, moving + crumbling platforms,
   checkpoints.
@@ -113,7 +112,7 @@ Open the dev URL and press **Space** to start. Append `?style=cuphead` or
 | **2-player online co-op** | `C` (from the title screen) |
 
 Gamepad is supported (right stick aims). On non-play screens, `Space/Enter`
-advances; `↓`/`S` opens **Stage Select & Boss Rush**; `C` opens **co-op**. Touch
+advances; `↓`/`S` opens **Stage Select**; `C` opens **co-op**. Touch
 buttons appear on mobile.
 
 ## Project structure

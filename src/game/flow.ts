@@ -20,7 +20,7 @@ import {
   START_LIVES,
   TIME_BONUS_PER_SEC,
 } from './constants';
-import { BOSSES, BOSS_RUSH, CAMPAIGN } from './levels';
+import { BOSSES, CAMPAIGN } from './levels';
 import type { Stage } from './levels';
 import { makeBoss, resetBoss } from './boss';
 import { gradeStage } from './grade';
@@ -38,9 +38,9 @@ const isPlaying = (state: GameState) => () => state.screen === 'play';
 const PROGRESS_KEY = `${BEST_KEY}-progress`;
 const CLEARED_KEY = `${BEST_KEY}-cleared`;
 
-/** The active stage sequence: the full campaign or a bosses-only rush. */
-function sequenceOf(state: GameState): readonly Stage[] {
-  return state.mode === 'bossrush' ? BOSS_RUSH : CAMPAIGN;
+/** The active stage sequence (the full campaign). */
+function sequenceOf(_state: GameState): readonly Stage[] {
+  return CAMPAIGN;
 }
 
 /** True once the player has cleared the full campaign (unlocks Expert). */
@@ -115,29 +115,20 @@ function resetRun(state: GameState): void {
 
 /** New game from the first campaign stage with fresh score/lives/weapons. */
 export function start(state: GameState): void {
-  state.mode = 'campaign';
   resetRun(state);
   enterStage(state, 0);
 }
 
 /** Replay a single campaign stage (stage select) with a fresh run economy. */
 export function startStage(state: GameState, i: number): void {
-  state.mode = 'campaign';
   resetRun(state);
   enterStage(state, i);
-}
-
-/** Start a Boss Rush: every boss back-to-back, fresh run economy. */
-export function startBossRush(state: GameState): void {
-  state.mode = 'bossrush';
-  resetRun(state);
-  enterStage(state, 0);
 }
 
 /** Enter stage `i` of the active sequence — a run level or a boss arena. */
 function enterStage(state: GameState, i: number): void {
   state.stageIndex = i;
-  if (state.mode === 'campaign') saveProgress(i);
+  saveProgress(i);
   reviveDowned(state); // co-op: spectating players rejoin for the new stage
   const stage = sequenceOf(state)[i];
   if (stage.kind === 'boss') {
@@ -371,7 +362,7 @@ export function win(state: GameState): void {
   state.screen = 'win';
   stopMusic();
   sfx('fanfare'); // grand end-of-game victory fanfare (not the per-level clear jingle)
-  if (state.mode === 'campaign') markCleared(); // unlock Expert difficulty
+  markCleared(); // unlock Expert difficulty
   if (state.score > state.best) {
     state.best = state.score;
     try {
@@ -560,8 +551,6 @@ function menuKey(state: GameState, key: string): void {
     state.screen = 'title';
   } else if (e.locked) {
     sfx('powerdown'); // gentle "nope" on a locked stage
-  } else if (e.kind === 'bossrush') {
-    startBossRush(state);
   } else {
     startStage(state, e.index);
   }

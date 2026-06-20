@@ -56,6 +56,3 @@ export const CAMPAIGN: Stage[] = [
   { kind: 'level', level: 5 }, // THE GLITCH GATE — parry
   { kind: 'boss', boss: 3 }, // THE OVERCLOCK — airborne true finale
 ];
-
-/** Boss Rush (§11.4): every boss back-to-back, no run levels. */
-export const BOSS_RUSH: Stage[] = BOSSES.map((_, i) => ({ kind: 'boss', boss: i }));
