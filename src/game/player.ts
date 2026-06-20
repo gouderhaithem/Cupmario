@@ -84,8 +84,14 @@ export function updatePlayer(state: GameState, pawn: Pawn): void {
   const keys = pawn.keys;
   const level = state.level;
 
+  // Host-authoritative side effects (weapon swap, block-bumps, firing) are
+  // suppressed while a co-op guest is locally predicting its own avatar: the
+  // host owns weapons/score/grid/projectiles and re-syncs them via snapshots, so
+  // running them here would spawn ghost bolts or permanently desync local tiles.
+  const predicting = state.netPredict === 'live';
+
   // Weapon switch (rising edge): cycle through the unlocked guns.
-  if (keys.switchWeapon && !pawn.switchLatch) {
+  if (!predicting && keys.switchWeapon && !pawn.switchLatch) {
     pawn.switchLatch = true;
     if (pawn.weapons.length > 1) {
       pawn.weaponIdx = (pawn.weaponIdx + 1) % pawn.weapons.length;
@@ -219,7 +225,7 @@ export function updatePlayer(state: GameState, pawn: Pawn): void {
   const fallSpeed = p.vy;
   p.y += p.vy;
   collideY(level, p);
-  if (risingBefore && p.vy === 0 && !p.onGround) bumpBlocks(state, pawn);
+  if (!predicting && risingBefore && p.vy === 0 && !p.onGround) bumpBlocks(state, pawn);
 
   // Touchdown: a hard enough landing squashes Pip and kicks up a dust fan.
   if (airBefore && p.onGround && fallSpeed > LAND_DUST_MIN) {
@@ -235,6 +241,8 @@ export function updatePlayer(state: GameState, pawn: Pawn): void {
   if (p.hurt > 0) p.hurt -= 1;
 
   // Fire: the equipped weapon decides rate, spread, arc, homing, and charge.
+  // Skipped entirely while predicting (the host fires + owns projectiles).
+  if (predicting) return;
   if (pawn.shootCd > 0) pawn.shootCd -= 1;
   const weapon = currentWeapon(pawn);
   if (weapon.charge) {

@@ -607,4 +607,8 @@ export interface Snapshot {
   screen: Screen;
   levelIndex: number;
   stageIndex: number;
+  /** Host freeze signals so the guest's prediction can pause in lockstep:
+   *  the host's pause-menu state and impact-freeze (hitstop) counter. */
+  paused: boolean;
+  hitstop: number;
 }

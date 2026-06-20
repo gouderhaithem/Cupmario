@@ -15,7 +15,7 @@ import { updateCoins } from './game/coin';
 import { updateCrumbles } from './game/crumble';
 import { updateEnemies } from './game/enemy';
 import { handleMenuKey, reachFlag, loseLife, startStage } from './game/flow';
-import { coopIsGuest, coopTick, installCoop } from './game/coop';
+import { coopIsGuest, coopTick, installCoop, predictGuest } from './game/coop';
 import { updateHazards } from './game/hazard';
 import { updateMovers } from './game/mover';
 import { updateMushrooms } from './game/mushroom';
@@ -107,9 +107,13 @@ function main(): void {
   // ---- Fixed-step gameplay update ----
   const update = (): void => {
     coopTick(state); // stream input (guest) or world snapshot (host), every screen
-    // The co-op guest is non-authoritative: it renders host snapshots and never
-    // simulates, so skip the entire gameplay step on the guest.
-    if (coopIsGuest()) return;
+    // The co-op guest is non-authoritative: the host owns the world. The guest
+    // predicts only its OWN avatar locally (instant input) and renders the rest
+    // from snapshots, so it skips the full gameplay step after predicting.
+    if (coopIsGuest()) {
+      predictGuest(state);
+      return;
+    }
     if (state.screen !== 'play' && state.screen !== 'boss') return;
     if (state.paused) return; // frozen behind the pause menu
 

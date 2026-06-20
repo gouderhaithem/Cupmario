@@ -200,6 +200,10 @@ export interface GameState {
   aimY: number;
   /** Online co-op link (live-partner model); inactive when playing solo. */
   coop: CoopState;
+  /** Co-op guest prediction mode: 'live' while locally predicting the guest's own
+   *  avatar (suppresses host-authoritative side effects in updatePlayer). 'off'
+   *  for single-player and the host, so their behavior is unchanged. */
+  netPredict: 'off' | 'live';
 }
 
 export function loadBest(): number {
@@ -483,6 +487,7 @@ export function createState(): GameState {
       active: false,
       role: null,
     },
+    netPredict: 'off',
   } as unknown as GameState;
   attachPawnProxies(state);
   return state;

@@ -10,10 +10,23 @@ import { setCoopHooks } from '../engine/lobby';
 import type { NetMessage, NetSession, Role } from '../engine/net';
 import { addPawn } from './state';
 import type { GameState } from './state';
-import type { Snapshot } from '../types';
+import { updatePlayer } from './player';
+import type { Player, Snapshot } from '../types';
 
 /** Send input / snapshot every Nth fixed tick (~30 Hz at 60 fps). */
 const SEND_EVERY = 2;
+
+/** The guest's own avatar lives in players[1] (players[0] renders the host). */
+const SELF_INDEX = 1;
+/** Reconciliation thresholds: snap the predicted self to the host when the
+ *  position error (px) or velocity error exceeds these (see {@link shouldSnapSelf}). */
+const SNAP_DIST = 24;
+const SNAP_VEL = 6;
+
+// Host freeze signals carried in the latest snapshot, so the guest's prediction
+// can idle in lockstep instead of drifting ahead while the host is frozen.
+let hostPaused = false;
+let hostHitstop = 0;
 
 let session: NetSession | null = null;
 let role: Role | null = null;
@@ -44,6 +57,9 @@ export function coopIsGuest(): boolean {
 function reset(state: GameState): void {
   session = null;
   role = null;
+  hostPaused = false;
+  hostHitstop = 0;
+  state.netPredict = 'off';
   state.coop.active = false;
   state.coop.role = null;
   state.players.length = 1; // back to solo
@@ -95,19 +111,58 @@ export function buildSnapshot(state: GameState): Snapshot {
     screen: state.screen,
     levelIndex: state.levelIndex,
     stageIndex: state.stageIndex,
+    paused: state.paused,
+    hitstop: state.hitstop,
   };
+}
+
+/**
+ * Decide whether the guest's locally-predicted self avatar must snap to the
+ * host's authoritative transform, rather than keeping the prediction. Snaps on a
+ * large position/velocity error, a ground-contact mismatch (the cheapest signal
+ * that the host moved the pawn in a way we couldn't predict — mover carry, parry
+ * bounce, a camera-tether shove), or a host event (took damage / knockback /
+ * spectator toggle). Pure, for unit testing.
+ */
+export function shouldSnapSelf(pred: Player, auth: Player, prevDown: boolean, authDown: boolean): boolean {
+  if (prevDown !== authDown) return true; // entered/left the spectator state
+  if (auth.hp < pred.hp) return true; // took damage on the host
+  if (auth.hurt > 0) return true; // in knockback / hit i-frames
+  if (auth.onGround !== pred.onGround) return true; // ground contact diverged
+  if (Math.abs(auth.x - pred.x) + Math.abs(auth.y - pred.y) > SNAP_DIST) return true;
+  if (Math.abs(auth.vx - pred.vx) + Math.abs(auth.vy - pred.vy) > SNAP_VEL) return true;
+  return false;
 }
 
 /** Overwrite the guest's render state from a host snapshot. (Exported for tests.) */
 export function applySnapshot(state: GameState, s: Snapshot): void {
+  // Capture change flags before we mutate local state below: a stage/screen
+  // change always forces the predicted self to snap (geometry was rebuilt).
+  const stageChanged = s.stageIndex !== state.stageIndex;
+  const screenChanged = s.screen !== state.screen;
   // Follow the host across stage changes (rebuilds local level geometry).
-  if (s.stageIndex !== state.stageIndex) beginStage?.(s.stageIndex);
+  if (stageChanged) beginStage?.(s.stageIndex);
+
+  // Remember the host's freeze state so prediction can pause in lockstep.
+  hostPaused = s.paused;
+  hostHitstop = s.hitstop;
 
   while (state.players.length < s.players.length) addPawn(state);
+  // On the guest, players[SELF_INDEX] is locally predicted: keep its predicted
+  // kinematics (adopting only host-owned hp/armed/hurt) unless a snap is needed.
+  const predictSelf = state.coop.role === 'guest' && !stageChanged && !screenChanged;
   for (let i = 0; i < s.players.length; i++) {
     const pw = state.players[i];
-    pw.player = s.players[i];
+    const auth = s.players[i];
     const meta = s.pawns?.[i];
+    const authDown = meta?.down ?? pw.down;
+    if (predictSelf && i === SELF_INDEX && pw.player && !pw.down && !authDown &&
+        !shouldSnapSelf(pw.player, auth, pw.down, authDown)) {
+      // Trust the prediction: keep local transform, take host gameplay fields.
+      pw.player = { ...pw.player, hp: auth.hp, armed: auth.armed, hurt: auth.hurt };
+    } else {
+      pw.player = auth; // partner, or a self-snap / transition: full overwrite
+    }
     if (meta) {
       pw.lives = meta.lives;
       pw.superCards = meta.superCards;
@@ -224,5 +279,38 @@ export function coopTick(state: GameState): void {
   } else {
     if (tick === SEND_EVERY) dlog('host sending snapshots');
     session.send({ t: 'snapshot', s: buildSnapshot(state) });
+  }
+}
+
+/**
+ * Co-op guest: locally simulate the guest's OWN avatar (players[1]) each fixed
+ * tick so movement responds instantly instead of waiting a network round-trip.
+ * Drives it from the local input held in players[0], with host-authoritative side
+ * effects suppressed (state.netPredict='live'). Idles when the host is frozen
+ * (paused / hitstop) or this pawn is spectating. The host stays authoritative;
+ * applySnapshot reconciles via {@link shouldSnapSelf}. No-op unless guest + playing.
+ */
+export function predictGuest(state: GameState): void {
+  if (role !== 'guest') return;
+  if (state.screen !== 'play' && state.screen !== 'boss') return;
+  if (state.paused || hostPaused || hostHitstop > 0) return;
+  const self = state.players[SELF_INDEX];
+  const src = state.players[0];
+  if (!self || !src || self.down) return;
+
+  // Feed the local input into the predicted pawn. dashTap is a one-shot pulse:
+  // consume it on the source (players[0] is never simulated on the guest, so
+  // nothing else would clear it — left set, it would dash every frame).
+  self.keys = { ...src.keys };
+  self.aimX = src.aimX;
+  self.aimY = src.aimY;
+  self.dashTap = src.dashTap;
+  src.dashTap = false;
+
+  state.netPredict = 'live';
+  try {
+    updatePlayer(state, self);
+  } finally {
+    state.netPredict = 'off';
   }
 }
