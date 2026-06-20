@@ -3,7 +3,7 @@
 A 2D side-scrolling platformer that runs entirely in the browser on a single
 `<canvas>` — **no engine, no image assets, no backend.** Run right across
 tile-based levels, collect coins, stomp foes, dodge hazards, parry pink bolts,
-and topple three hand-drawn bosses.
+and topple four hand-drawn bosses — solo, or **online with a friend**.
 
 Its signature is a **1930s rubber-hose ("Cuphead") art style**, rendered live
 with ink-outlined curves, boiling lines, and a warm vintage film grade — all
@@ -34,19 +34,55 @@ boiling-ink outline on everything that moves.
 
 ## Features
 
+- **2-player online co-op** — share one world with a friend over a 4-letter code.
+  No server, no sign-up; the connection is peer-to-peer (WebRTC). See below.
 - **Two switchable art styles** — rubber-hose *Cuphead* (vintage ink + film grade)
   or clean *Mario* pixel art. Toggle in the pause menu or via `?style=cuphead`.
 - **Per-biome look** — day meadow, moonlit night, crystal cavern, industrial
   foundry; each with its own sky, backdrop, and tile palette.
-- **Three bosses** with multi-phase patterns — BARKBROOD (oak), GRANITE (stone
-  golem), RIME (ice spire) — plus a **Boss Rush** mode.
+- **Four bosses** with multi-phase patterns — BARKBROOD (oak), GRANITE (stone
+  golem), RIME (ice spire), and **THE OVERCLOCK** (airborne finale) — plus a
+  **Boss Rush** mode and three mechanic-showcase levels (ferries, dash-gaps,
+  parry-traversal).
 - **Real platforming kit** — running, variable jump, duck/fast-fall, dash,
-  shooting, a **parry** on pink bolts, moving + crumbling platforms, checkpoints.
+  wall-jump, shooting, a **parry** on pink bolts, moving + crumbling platforms,
+  checkpoints.
 - **Accessibility & options** — three difficulty tiers, master volume,
-  reduced-motion (freezes the boil/grain/shake), and on-screen touch controls.
+  reduced-motion (freezes the boil/grain/shake), a **colorblind-friendly UI
+  palette**, and on-screen touch controls.
 - **Synthesized audio** — every SFX and music track is generated at runtime with
   the Web Audio API; there are no audio files in the repo.
 - **Levels are data** — each level/boss is a JSON file; no code changes to add one.
+
+## 2-player online co-op
+
+Play the whole campaign together in **one shared world** — same enemies, same
+bosses, same chasms.
+
+1. Press **`C`** on the title screen to open the co-op lobby.
+2. One player picks **Host** and reads out the **4-letter code**; the other picks
+   **Join** and types it in.
+3. You're connected — both players drop into the level and play together.
+
+How it works and what's shared:
+
+- **Shared world, host-authoritative.** The host runs the one simulation; both
+  players fight the *same* enemies and the *same* boss (combined damage), and
+  clearing the flag advances both.
+- **Per-player lives.** Each player has their own HP and lives (shown as a P1/P2
+  card in the HUD). A fallen player spends one of their own lives and respawns
+  beside their partner, or sits out as a spectator until the next stage; the run
+  only ends when both are down.
+- **Responsive controls.** The joining player's character is predicted locally, so
+  movement feels instant rather than waiting on the network.
+- **Peer-to-peer, no backend.** Transport is WebRTC via [PeerJS]; its public broker
+  is used only for the initial handshake (signaling). Once connected, all game
+  data flows directly between the two players — there is no game server, and no
+  account is required. Best on a decent connection between the two peers.
+
+Single-player is unchanged and remains the default — co-op is entirely opt-in.
+
+[PeerJS]: https://peerjs.com/
 
 ## Run it
 
@@ -74,10 +110,11 @@ Open the dev URL and press **Space** to start. Append `?style=cuphead` or
 | Aim shot (8-way) | hold `K` + arrows |
 | EX shot / **MEGABLAST** | `J` (when meter is full) |
 | Pause & options | `P` / `Esc` |
+| **2-player online co-op** | `C` (from the title screen) |
 
 Gamepad is supported (right stick aims). On non-play screens, `Space/Enter`
-advances; `↓`/`S` opens **Stage Select & Boss Rush**. Touch buttons appear on
-mobile.
+advances; `↓`/`S` opens **Stage Select & Boss Rush**; `C` opens **co-op**. Touch
+buttons appear on mobile.
 
 ## Project structure
 
@@ -86,8 +123,10 @@ src/
   main.ts              bootstrap, scaling, fixed-step update orchestration
   types.ts             shared interfaces (Level, Player, Enemy, Boss, Style, …)
   game/                constants, state, level builder, physics, player, enemy,
-                       coin, flow, boss, settings, difficulty, grade, select
-  engine/              loop (fixed timestep), input, audio (synth), camera
+                       coin, flow, boss, settings, difficulty, grade, select,
+                       coop (online shared-world glue)
+  engine/              loop (fixed timestep), input, audio (synth), camera,
+                       net (WebRTC transport) + lobby (host/join overlay)
   render/
     render.ts          top-level draw(): bg → tiles → entities → player → hud
     background.ts      style dispatch + the mario parallax backdrops
@@ -101,8 +140,8 @@ src/
         background.ts    sky + sun/moon + hills / cavern / foundry backdrops
         tiles.ts         scalloped turf, dirt strata, carved stone, prize crates
         player.ts        Pip, enemies.ts, fx.ts, boss.ts (all ink + boil)
-  levels/              level1 (day) · level2 (cavern) · level3 (foundry)
-                       boss1/2/3 (night)  — all authored JSON
+  levels/              level1–6 (meadow · cavern · foundry · tidal · ember ·
+                       glitch) + boss1–4  — all authored JSON
 ```
 
 ### Design rules (see [`CLAUDE.md`](./CLAUDE.md))
