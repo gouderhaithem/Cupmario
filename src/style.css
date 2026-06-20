@@ -316,9 +316,26 @@ html, body {
   gap: 16px;
   z-index: 8;
   text-align: center;
+  /* Breathing room inside the deco frame; scroll if a screen ever runs tall
+     (keeps long menus like the title help from spilling out of the cabinet). */
+  padding: 26px 20px;
+  overflow-y: auto;
 }
 
 .overlay.hidden { display: none; }
+
+/* Each screen fades + lifts in when it becomes visible, so swaps between
+   title / level-clear / game-over / win don't snap harshly. */
+@keyframes overlayIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.overlay:not(.hidden) { animation: overlayIn 0.32s ease both; }
+
+/* Respect the OS "reduce motion" setting for the overlay fade. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay:not(.hidden) { animation: none; }
+}
 
 /* Art-deco card frame around every overlay: a gold double-rule inset from the
    edges with an ink keyline and a soft inner vignette, behind the content. */
@@ -471,3 +488,21 @@ html, body {
 
 .blink { animation: blink 1s steps(1) infinite; }
 .pulse { animation: pulse 0.7s steps(1) infinite; }
+
+/* ---- Colorblind-friendly UI palette ----
+   Toggled via #cabinet.cb (pause menu → COLORBLIND MODE). Remaps the red/green
+   HUD chrome to an Okabe-Ito-style red/green-safe set: danger reds become
+   vermillion, "good"/health greens become blue, so the two never collide for
+   deuteranopia/protanopia. Shapes + letters already disambiguate elsewhere. */
+#cabinet.cb {
+  --red: #d55e00;     /* vermillion — hearts / GAME OVER */
+  --green: #56b4e9;   /* sky blue — "good" accents */
+  --cyan: #56b4e9;
+  --purple: #cc79a7;  /* reddish-purple */
+}
+#cabinet.cb .hp-on { background: #56b4e9; }      /* HP pips: blue, not green */
+#cabinet.cb .hud-ptag2 { color: #56b4e9; }       /* P2 tag: blue vs P1 gold */
+#cabinet.cb .grade-badge[data-grade="A"] { background: #56b4e9; color: #04243a; }
+#cabinet.cb .grade-badge[data-grade="C"] { background: #e69f00; color: #3a2600; }
+#cabinet.cb .ov-big-green,
+#cabinet.cb .ov-big-gold { color: #56b4e9; text-shadow: 5px 5px 0 #04243a; }

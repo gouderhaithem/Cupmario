@@ -84,15 +84,15 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
   ctx.fillStyle = 'rgba(8,6,18,0.78)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
-  // Framed deco panel behind the menu rows.
-  const pw = 660;
-  const ph = 420;
-  decoPanel(ctx, (VIEW_W - pw) / 2, 96, pw, ph);
+  // Framed deco panel behind the menu rows (tall enough for all option rows).
+  const pw = 680;
+  const ph = 452;
+  decoPanel(ctx, (VIEW_W - pw) / 2, 80, pw, ph);
 
   ctx.textAlign = 'center';
   ctx.font = "26px 'Press Start 2P', monospace";
   ctx.fillStyle = PALETTE.bossCrown;
-  ctx.fillText('PAUSED', VIEW_W / 2, 150);
+  ctx.fillText('PAUSED', VIEW_W / 2, 140);
 
   const rows = [
     'RESUME',
@@ -101,11 +101,12 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
     `REDUCED MOTION:  ${state.reducedMotion ? 'ON' : 'OFF'}`,
     `TOUCH CONTROLS:  ${state.showTouchControls ? 'ON' : 'OFF'}`,
     `STYLE:  ${state.style === 'cuphead' ? 'CUPHEAD' : 'MARIO'}`,
+    `COLORBLIND MODE:  ${state.colorblind ? 'ON' : 'OFF'}`,
     'QUIT TO TITLE',
   ];
   ctx.font = "14px 'Press Start 2P', monospace";
-  const top = 220;
-  const rowH = 44;
+  const top = 196;
+  const rowH = 42;
   rows.forEach((label, i) => {
     const y = top + i * rowH;
     const sel = i === state.pauseIndex;
@@ -119,7 +120,7 @@ export function drawPauseMenu(ctx: CanvasRenderingContext2D, state: GameState): 
 
   ctx.font = "10px 'Press Start 2P', monospace";
   ctx.fillStyle = '#8a84a8';
-  ctx.fillText('↑ ↓  MOVE     ← →  ADJUST     SPACE  SELECT     ESC  RESUME', VIEW_W / 2, VIEW_H - 40);
+  ctx.fillText('↑ ↓  MOVE     ← →  ADJUST     SPACE  SELECT     ESC  RESUME', VIEW_W / 2, VIEW_H - 26);
   ctx.restore();
 }
 

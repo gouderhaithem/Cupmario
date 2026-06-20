@@ -8,6 +8,8 @@ type SfxName =
   | 'die'
   | 'levelup'
   | 'win'
+  | 'fanfare'
+  | 'bossDown'
   | 'shoot'
   | 'power'
   | 'powerdown'
@@ -94,6 +96,23 @@ export function sfx(name: SfxName, step = 0): void {
       break;
     case 'win':
       [523, 659, 784, 1047, 1319].forEach((f, i) => beep(f, 0.2, 'square', 0.18, i * 0.13));
+      break;
+    case 'fanfare':
+      // Grand end-of-game victory fanfare: a triplet pickup, a held tonic
+      // triad, then a soaring octave run with a low brass root under it.
+      [784, 784, 784].forEach((f, i) => beep(f, 0.1, 'square', 0.16, i * 0.1));
+      [523, 659, 784].forEach((f) => beep(f, 0.5, 'square', 0.14, 0.32)); // tonic triad swell
+      beep(262, 0.7, 'triangle', 0.14, 0.32); // brass root
+      [1047, 1319, 1568, 2093].forEach((f, i) => beep(f, 0.22, 'square', 0.16, 0.6 + i * 0.12));
+      beep(1047, 0.8, 'square', 0.16, 1.1); // final ringing tonic
+      beep(523, 0.8, 'triangle', 0.12, 1.1);
+      break;
+    case 'bossDown':
+      // Boss-defeat stinger: a descending "powering down" growl that resolves
+      // up into a short triumphant flourish.
+      [330, 262, 196].forEach((f, i) => beep(f, 0.16, 'sawtooth', 0.16, i * 0.1));
+      [523, 784, 1047, 1568].forEach((f, i) => beep(f, 0.24, 'square', 0.18, 0.34 + i * 0.11));
+      beep(131, 0.5, 'triangle', 0.12, 0.34); // low thud under the flourish
       break;
     case 'shoot':
       beep(880, 0.05, 'square', 0.12);

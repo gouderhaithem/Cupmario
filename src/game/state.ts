@@ -189,6 +189,8 @@ export interface GameState {
   style: Style;
   /** Show the on-screen touch arrows + action buttons. Persisted. */
   showTouchControls: boolean;
+  /** Colorblind-friendly UI palette (red/green-safe HUD chrome). Persisted. */
+  colorblind: boolean;
   /** Gameplay is frozen behind the pause menu. */
   paused: boolean;
   /** Highlighted entry in the pause menu. */
@@ -474,6 +476,7 @@ export function createState(): GameState {
     reducedMotion: settings.reducedMotion,
     style: settings.style,
     showTouchControls: settings.showTouchControls,
+    colorblind: settings.colorblind,
     paused: false,
     pauseIndex: 0,
     coop: {

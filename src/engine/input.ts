@@ -10,6 +10,12 @@ export function applyTouchControls(visible: boolean): void {
   cabinet?.classList.toggle('no-touch-controls', !visible);
 }
 
+/** Toggle the colorblind-friendly UI palette on the cabinet (CSS does the rest). */
+export function applyColorblind(on: boolean): void {
+  const cabinet = document.getElementById('cabinet');
+  cabinet?.classList.toggle('cb', on);
+}
+
 const PREVENT = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ']);
 const LEFT = new Set(['ArrowLeft', 'a', 'A']);
 const RIGHT = new Set(['ArrowRight', 'd', 'D']);

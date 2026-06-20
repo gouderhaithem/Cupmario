@@ -5,7 +5,7 @@ import './style.css';
 
 import { updateCamera } from './engine/camera';
 import { decayShake } from './engine/effects';
-import { applyTouchControls, pollGamepad, setupInput } from './engine/input';
+import { applyColorblind, applyTouchControls, pollGamepad, setupInput } from './engine/input';
 import { initLobby } from './engine/lobby';
 import { startLoop } from './engine/loop';
 import { PIT_MARGIN, VIEW_H, VIEW_W } from './game/constants';
@@ -69,6 +69,7 @@ function main(): void {
 
   setupInput(state, (key) => handleMenuKey(state, key));
   applyTouchControls(state.showTouchControls);
+  applyColorblind(state.colorblind);
   initLobby(state);
   installCoop(state, (stage) => startStage(state, stage));
   setupScale();

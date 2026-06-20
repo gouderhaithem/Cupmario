@@ -136,7 +136,8 @@ function hurtBoss(state: GameState, dmg: number): void {
     state.flash = FLASH_FRAMES;
     shakeScreen(state, SHAKE_HURT);
     stopMusic();
-    sfx('koCard');
+    sfx('koCard'); // the snappy KO-card flourish
+    sfx('bossDown'); // boss-specific defeat stinger layered under it
     state.pops.push({
       x: boss.x + boss.w / 2,
       y: boss.y,

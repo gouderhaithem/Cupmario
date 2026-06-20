@@ -16,6 +16,8 @@ export interface Settings {
   showTouchControls: boolean;
   /** Art-direction style (cuphead vintage vs mario clean). Visual only. */
   style: Style;
+  /** Colorblind-friendly UI palette (red/green-safe hearts, HP, grades, tags). */
+  colorblind: boolean;
 }
 
 const ASSIST_KEY = `${BEST_KEY}-assist`; // legacy boolean, migrated to difficulty
@@ -24,6 +26,7 @@ const VOLUME_KEY = `${BEST_KEY}-volume`;
 const REDUCED_MOTION_KEY = `${BEST_KEY}-reduced-motion`;
 const TOUCH_CONTROLS_KEY = `${BEST_KEY}-touch-controls`;
 const STYLE_KEY = `${BEST_KEY}-style`;
+const COLORBLIND_KEY = `${BEST_KEY}-colorblind`;
 
 /** Default look when nothing is stored or in the URL — keeps the vintage grade. */
 const DEFAULT_STYLE: Style = 'cuphead';
@@ -61,6 +64,7 @@ export function loadSettings(): Settings {
   let reducedMotion = false;
   let showTouchControls = SHOW_TOUCH_CONTROLS;
   let style: Style = DEFAULT_STYLE;
+  let colorblind = false;
   try {
     const stored = localStorage.getItem(DIFFICULTY_KEY);
     if (isDifficulty(stored)) {
@@ -74,10 +78,11 @@ export function loadSettings(): Settings {
     const t = localStorage.getItem(TOUCH_CONTROLS_KEY);
     if (t !== null) showTouchControls = t === '1'; // unset → keep the constant default
     style = resolveStyle();
+    colorblind = localStorage.getItem(COLORBLIND_KEY) === '1';
   } catch {
     /* ignore storage errors */
   }
-  return { difficulty, volume, reducedMotion, showTouchControls, style };
+  return { difficulty, volume, reducedMotion, showTouchControls, style, colorblind };
 }
 
 export function saveSettings(s: Settings): void {
@@ -87,6 +92,7 @@ export function saveSettings(s: Settings): void {
     localStorage.setItem(REDUCED_MOTION_KEY, s.reducedMotion ? '1' : '0');
     localStorage.setItem(TOUCH_CONTROLS_KEY, s.showTouchControls ? '1' : '0');
     localStorage.setItem(STYLE_KEY, s.style);
+    localStorage.setItem(COLORBLIND_KEY, s.colorblind ? '1' : '0');
   } catch {
     /* ignore storage errors */
   }

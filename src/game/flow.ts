@@ -2,7 +2,7 @@
 
 import { setMasterVolume, sfx, startBossMusic, startMusic, stopMusic } from '../engine/audio';
 import { shakeScreen } from '../engine/effects';
-import { applyTouchControls } from '../engine/input';
+import { applyColorblind, applyTouchControls } from '../engine/input';
 import { openLobby } from '../engine/lobby';
 import { endCoop } from './coop';
 import {
@@ -370,7 +370,7 @@ export function win(state: GameState): void {
   state.score += CLEAR_BONUS;
   state.screen = 'win';
   stopMusic();
-  sfx('win');
+  sfx('fanfare'); // grand end-of-game victory fanfare (not the per-level clear jingle)
   if (state.mode === 'campaign') markCleared(); // unlock Expert difficulty
   if (state.score > state.best) {
     state.best = state.score;
@@ -393,7 +393,7 @@ const ADVANCE_KEYS = new Set([' ', 'Enter', 'ArrowRight', 'ArrowUp', 'w', 'W']);
 const PAUSE_KEYS = new Set(['Escape', 'p', 'P']);
 
 /** Pause-menu rows: Resume / Difficulty / Volume / Reduced Motion / Touch Controls / Style / Quit. */
-export const PAUSE_ITEMS = 7;
+export const PAUSE_ITEMS = 8;
 
 /** Open the stage-select screen (from title / gameover / win). */
 export function openSelect(state: GameState): void {
@@ -452,6 +452,7 @@ function persist(state: GameState): void {
     reducedMotion: state.reducedMotion,
     showTouchControls: state.showTouchControls,
     style: state.style,
+    colorblind: state.colorblind,
   });
 }
 
@@ -494,6 +495,13 @@ function toggleStyle(state: GameState): void {
   persist(state);
 }
 
+/** Flip the colorblind-friendly UI palette, apply it to the DOM, and persist. */
+function toggleColorblind(state: GameState): void {
+  state.colorblind = !state.colorblind;
+  applyColorblind(state.colorblind);
+  persist(state);
+}
+
 /** Navigate + act within the pause menu. */
 function pauseKey(state: GameState, key: string): void {
   if (UP_KEYS.has(key)) {
@@ -507,6 +515,7 @@ function pauseKey(state: GameState, key: string): void {
     else if (state.pauseIndex === 3) toggleReducedMotion(state);
     else if (state.pauseIndex === 4) toggleTouchControls(state);
     else if (state.pauseIndex === 5) toggleStyle(state);
+    else if (state.pauseIndex === 6) toggleColorblind(state);
   } else if (CONFIRM_KEYS.has(key)) {
     if (state.pauseIndex === 0) {
       state.paused = false; // Resume
@@ -519,6 +528,8 @@ function pauseKey(state: GameState, key: string): void {
     } else if (state.pauseIndex === 5) {
       toggleStyle(state);
     } else if (state.pauseIndex === 6) {
+      toggleColorblind(state);
+    } else if (state.pauseIndex === 7) {
       state.paused = false; // Quit to title
       stopMusic();
       endCoop(state); // drop any online co-op link
